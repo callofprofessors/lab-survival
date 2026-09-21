@@ -2,7 +2,7 @@
 
 장비를 두들겨 데이터를 뽑고 논문을 쓰고 연구비를 따서 연구실을 키우는 3D 웹게임.
 
-▶ 플레이: https://여기에-vercel-주소.vercel.app
+▶ 플레이: https://lab-survival.vercel.app
 
 ## 조작
 - 화면을 드래그하면 조이스틱처럼 이동
