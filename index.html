@@ -66,7 +66,22 @@ canvas{display:block;width:100%;height:100%}
 #partyPop{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(0);background:linear-gradient(135deg,#ffd23d,#ff5fa2,#4fb3ff);color:#1a0a2e;font-weight:900;font-size:1.35rem;text-align:center;padding:16px 22px;border-radius:18px;box-shadow:0 0 40px rgba(255,255,255,.7);pointer-events:none;white-space:pre-line;line-height:1.5;z-index:5}
 #partyPop.on{animation:partyIn 4.5s ease-out forwards}
 @keyframes partyIn{0%{transform:translate(-50%,-50%) scale(0) rotate(-10deg)}10%{transform:translate(-50%,-50%) scale(1.15) rotate(3deg)}15%{transform:translate(-50%,-50%) scale(1) rotate(0)}85%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%) scale(.9)}}
-.hofrow{padding:3px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+.hofrow{display:flex;align-items:center;gap:10px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08);border-radius:10px;margin:3px 0}
+.hofrow .num{width:28px;text-align:center;font-weight:800;opacity:.7}
+.hofrow .medal{font-size:1.9rem;width:40px;text-align:center;filter:drop-shadow(0 0 6px rgba(255,255,255,.6));animation:medalBob 1.6s ease-in-out infinite}
+.hofrow.rank1{background:linear-gradient(120deg,#ffd700,#fff3b0,#ffb300,#ffe680,#ffd700);background-size:300% 100%;color:#3a2a00;animation:shimmer 3s linear infinite;box-shadow:0 0 18px rgba(255,215,0,.55)}
+.hofrow.rank2{background:linear-gradient(120deg,#c0c0c0,#f4f4f4,#a8a8a8,#e8e8e8,#c0c0c0);background-size:300% 100%;color:#222;animation:shimmer 4s linear infinite;box-shadow:0 0 12px rgba(220,220,220,.45)}
+.hofrow.rank3{background:linear-gradient(120deg,#cd7f32,#f0c9a0,#b06a25,#e6b07a,#cd7f32);background-size:300% 100%;color:#2a1600;animation:shimmer 5s linear infinite;box-shadow:0 0 10px rgba(205,127,50,.45)}
+.hofrow.rank1 small,.hofrow.rank2 small,.hofrow.rank3 small{opacity:.85}
+@keyframes shimmer{0%{background-position:0% 0}100%{background-position:300% 0}}
+@keyframes medalBob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-4px) rotate(6deg)}}
+.tabs{display:flex;gap:8px;margin:4px 0 8px}
+.tab{font:inherit;font-weight:800;padding:8px 18px;border-radius:999px;border:2px solid rgba(255,255,255,.3);background:transparent;color:#fff}
+.tab.on{background:var(--gold);color:#2a1a00;border-color:var(--gold)}
+.btn.ghost{background:rgba(255,255,255,.12);color:#fff;box-shadow:none;border:2px solid rgba(255,255,255,.3);margin-top:10px;padding:12px 30px;font-size:1.05rem}
+.bigrow{width:min(92vw,420px);gap:12px}
+.bigact{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;font:inherit;font-size:1rem;font-weight:800;border:0;border-radius:16px;color:#fff;cursor:pointer}
+.bigact .ico{font-size:2.2rem;line-height:1}
 #toast{position:absolute;left:50%;bottom:calc(60px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel);padding:8px 14px;border-radius:10px;font-weight:700;font-size:.9rem;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 </style>
 </head>
@@ -100,6 +115,8 @@ canvas{display:block;width:100%;height:100%}
     <p class="sub">학기말마다 인건비가 나가고 연구원이 과로하면 떠납니다. 리젝은 다시 써야 하고 장비는 부서지면 15초 뒤 복구되며 체력이 떨어지면 커피가 필요합니다. 우상단 🏛에서 강의·세미나·과제 지원을 관리하세요.</p>
     <input id="labName" class="labname" maxlength="20" placeholder="연구실 이름 (예: AI 광공학 연구실)">
     <button class="btn" id="btnStart">출근</button>
+    <button class="btn ghost" id="btnRankStart">🏆 랭킹 보기</button>
+    <p class="sub" id="verNote"></p>
     <p class="sub">🏆 엔딩·파산·안식년 시점의 성적이 전체 랭킹에 연구실 이름으로 올라갑니다.</p>
     <p class="sub" id="saveNote"></p>
   </div>
@@ -118,10 +135,16 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnIntro">확인 — 지금 공고 열림 (50초)</button>
   </div>
   <div id="hofBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1 style="font-size:1.6rem">🏆 전체 랭킹</h1>
-    <div class="dept"><div class="sec" id="globalList"><small>불러오는 중…</small></div><small>연구실 이름 기준 최고 기록 · 엔딩·파산·안식년·게임 종료 시점에 자동 등록</small>
+    <h1 style="font-size:1.6rem">🏆 랭킹</h1>
+    <div class="tabs"><button class="tab on" id="tabWeek">이번 주</button><button class="tab" id="tabAll">역대</button></div>
+    <div class="dept"><div class="sec" id="globalList"><small>불러오는 중…</small></div><small id="rankNote">월~일(한국시간) 기준 이번 주 최고의 연구실 · 연구실 이름 기준 최고 기록</small>
     <div class="sec" style="margin-top:14px"><b>📱 이 기기 기록</b><div id="hofList"></div></div></div>
     <button class="btn" id="btnHofClose">닫기</button>
+  </div>
+  <div id="statusBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
+    <h1 style="font-size:1.5rem">🛠 개발자 현황</h1>
+    <div class="dept" id="statusBody"></div>
+    <button class="btn" id="btnStatusClose">닫기</button>
   </div>
   <div id="goBox" class="overlay hidden">
     <h1 id="goTitle" style="font-size:1.7rem"></h1>
@@ -142,7 +165,7 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">안식년 떠나기 (처음부터 · 수익 +25% 영구)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰</h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v1.0.5</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
@@ -155,7 +178,7 @@ canvas{display:block;width:100%;height:100%}
         <div class="row"><button class="act" id="btnExport">저장 코드 복사</button><button class="act" id="btnImport" style="background:#22c55e">코드로 불러오기</button></div>
       </div>
     </div>
-    <div class="row" style="width:min(92vw,420px)"><button class="act" id="btnRank" style="background:#ffc83d;color:#2a1a00">🏆 랭킹 보기</button><button class="act" id="btnQuit" style="background:#ff8a3d">🏁 게임 종료</button></div>
+    <div class="row bigrow"><button class="bigact" id="btnRank" style="background:#ffc83d;color:#2a1a00"><span class="ico">🏆</span>랭킹 보기</button><button class="bigact" id="btnQuit" style="background:#ff5a5a"><span class="ico">💣</span>연구실 폭파</button></div>
     <button class="btn" id="btnResume">계속</button>
     <button class="btn" id="btnReset" style="background:#ff6b6b;box-shadow:0 6px 0 #b03a3a;color:#fff;margin-top:10px">처음부터</button>
   </div>
@@ -168,6 +191,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
+const VERSION='1.0.5';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -733,9 +757,40 @@ async function fetchTop(){
   const rows=await r.json();const best={};for(const x of rows){if(!best[x.lab_name])best[x.lab_name]=x;}
   return Object.values(best).sort((a,b)=>b.score-a.score).slice(0,10);
 }
+let DEVICE='';try{DEVICE=localStorage.getItem('lab_device')||'';if(!DEVICE){DEVICE=Math.random().toString(36).slice(2,10)+Date.now().toString(36);localStorage.setItem('lab_device',DEVICE);}}catch(e){DEVICE='anon'+Math.random().toString(36).slice(2,8);}
+async function logVisit(){try{await fetch(SUPA_URL+'/rest/v1/visits',{method:'POST',headers:Object.assign({'Prefer':'return=minimal'},supaHeaders),body:JSON.stringify({device:DEVICE,lang:(navigator.language||'').slice(0,10),ua:(navigator.userAgent||'').slice(0,120)})});}catch(e){}}
+const kstNow=()=>new Date(Date.now()+9*3600*1000);
+function weekStartISO(){const k=kstNow();const day=(k.getUTCDay()+6)%7;const mon=new Date(Date.UTC(k.getUTCFullYear(),k.getUTCMonth(),k.getUTCDate()-day));return new Date(mon.getTime()-9*3600*1000).toISOString();}
+function dayStartISO(){const k=kstNow();const d=new Date(Date.UTC(k.getUTCFullYear(),k.getUTCMonth(),k.getUTCDate()));return new Date(d.getTime()-9*3600*1000).toISOString();}
+async function fetchWeekTop(){
+  const r=await fetch(SUPA_URL+'/rest/v1/scores?select=lab_name,score,papers,alumni,earned,natures,ending,created_at&created_at=gte.'+encodeURIComponent(weekStartISO())+'&order=score.desc&limit=200',{headers:supaHeaders});
+  if(!r.ok)throw new Error(r.status);const rows=await r.json();const best={};for(const x of rows){if(!best[x.lab_name])best[x.lab_name]=x;}
+  return Object.values(best).sort((a,b)=>b.score-a.score).slice(0,10);
+}
+async function fetchStatus(){
+  const [v,sc]=await Promise.all([
+    fetch(SUPA_URL+'/rest/v1/visits?select=device,created_at,lang&order=created_at.desc&limit=5000',{headers:supaHeaders}).then(r=>r.json()),
+    fetch(SUPA_URL+'/rest/v1/scores?select=lab_name,score,ending,created_at&order=created_at.desc&limit=5000',{headers:supaHeaders}).then(r=>r.json())]);
+  const day=dayStartISO(),week=weekStartISO();
+  const uniq=a=>new Set(a.map(x=>x.device)).size;
+  const days={};for(const x of v){const d=new Date(new Date(x.created_at).getTime()+9*3600*1000).toISOString().slice(5,10);days[d]=(days[d]||0)+1;}
+  const langs={};for(const x of v){const l=(x.lang||'?').slice(0,2);langs[l]=(langs[l]||0)+1;}
+  return {visits:v.length,devices:uniq(v),today:v.filter(x=>x.created_at>=day).length,todayDev:uniq(v.filter(x=>x.created_at>=day)),week:v.filter(x=>x.created_at>=week).length,weekDev:uniq(v.filter(x=>x.created_at>=week)),days:Object.entries(days).slice(0,14),langs:Object.entries(langs).sort((a,b)=>b[1]-a[1]).slice(0,5),runs:sc.length,runsWeek:sc.filter(x=>x.created_at>=week).length,recent:sc.slice(0,8)};
+}
+function showStatus(){
+  $('statusBody').innerHTML='<small>불러오는 중…</small>';$('statusBox').classList.remove('hidden');
+  fetchStatus().then(st=>{
+    $('statusBody').innerHTML=
+      '<div class="sec"><b>👥 방문</b><br>오늘 '+st.today+'회 · 기기 '+st.todayDev+'대<br>이번 주(월~) '+st.week+'회 · 기기 '+st.weekDev+'대<br>누적 '+st.visits+'회 · 기기 '+st.devices+'대</div>'+
+      '<div class="sec"><b>📅 최근 일별 방문</b><br>'+(st.days.map(([d,n])=>'<small>'+d+' — '+n+'회</small>').join('<br>')||'<small>없음</small>')+'</div>'+
+      '<div class="sec"><b>🌐 언어</b><br>'+(st.langs.map(([l,n])=>'<small>'+l+' '+n+'</small>').join(' · ')||'-')+'</div>'+
+      '<div class="sec"><b>🏁 기록 등록</b><br>이번 주 '+st.runsWeek+'건 · 누적 '+st.runs+'건<br>'+st.recent.map(x=>'<small>'+String(x.lab_name).replace(/[<>]/g,'')+' · '+Number(x.score).toLocaleString()+' · '+x.ending+' · '+new Date(new Date(x.created_at).getTime()+9*3600*1000).toISOString().slice(5,16).replace('T',' ')+'</small>').join('<br>')+'</div>'+
+      '<small>기준: 한국시간(KST) · 방문 = 페이지 로드 · 기기 = 브라우저별 익명 ID · IP나 이름은 수집하지 않음</small>';
+  }).catch(()=>{$('statusBody').innerHTML='<small>서버에 연결할 수 없습니다. visits 테이블 SQL을 실행했는지 확인하세요.</small>';});
+}
 function globalHtml(rows){
   if(!rows.length)return '<small>아직 기록이 없습니다 — 첫 번째 연구실이 되어보세요</small>';
-  return rows.map((e,i)=>'<div class="hofrow">'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' <b>'+String(e.lab_name).replace(/[<>]/g,'')+'</b> <small>'+Number(e.score).toLocaleString()+'점 · 논문 '+e.papers+' · 졸업생 '+e.alumni+' · '+fmt(e.earned)+' · '+String(e.ending).replace(/[<>]/g,'')+'</small></div>').join('');
+  return rows.map((e,i)=>'<div class="hofrow'+(i<3?' rank'+(i+1):'')+'">'+(i<3?'<span class="medal">'+['🥇','🥈','🥉'][i]+'</span>':'<span class="num">'+(i+1)+'</span>')+'<div><b>'+String(e.lab_name).replace(/[<>]/g,'')+(i===0?' 👑':'')+'</b><br><small>'+Number(e.score).toLocaleString()+'점 · 논문 '+e.papers+' · 졸업생 '+e.alumni+' · '+fmt(e.earned)+' · '+String(e.ending).replace(/[<>]/g,'')+'</small></div></div>').join('');
 }
 function recordRun(end){
   const e={name:S.labName||'우리 연구실',papers:S.accepted,alumni:S.alumni,earned:Math.floor(S.earned),natures:S.natures,end,date:new Date().toISOString().slice(0,10)};
@@ -831,7 +886,12 @@ function showEnding(){
 }
 $('btnIntro').addEventListener('click',()=>{$('introBox').classList.add('hidden');S.running=true;last=performance.now();});
 $('btnGoRetry').addEventListener('click',resetRun);
-$('btnRank').addEventListener('click',()=>{$('hofList').innerHTML=hofHtml();$('globalList').innerHTML='<small>불러오는 중…</small>';$('hofBox').classList.remove('hidden');fetchTop().then(rows=>{$('globalList').innerHTML=globalHtml(rows);}).catch(()=>{$('globalList').innerHTML='<small>랭킹 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.</small>';});});
+let rankMode='week';
+function openRank(){$('hofList').innerHTML=hofHtml();$('hofBox').classList.remove('hidden');loadRank();}
+function loadRank(){$('globalList').innerHTML='<small>불러오는 중…</small>';$('tabWeek').classList.toggle('on',rankMode==='week');$('tabAll').classList.toggle('on',rankMode!=='week');$('rankNote').textContent=rankMode==='week'?'월~일(한국시간) 기준 이번 주 최고의 연구실 · 연구실 이름 기준 최고 기록':'역대 최고 기록 · 연구실 이름 기준';(rankMode==='week'?fetchWeekTop():fetchTop()).then(rows=>{$('globalList').innerHTML=globalHtml(rows);}).catch(()=>{$('globalList').innerHTML='<small>랭킹 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.</small>';});}
+$('btnRank').addEventListener('click',openRank);$('btnRankStart').addEventListener('click',openRank);
+$('tabWeek').addEventListener('click',()=>{rankMode='week';loadRank();});$('tabAll').addEventListener('click',()=>{rankMode='all';loadRank();});
+$('btnStatusClose').addEventListener('click',()=>{$('statusBox').classList.add('hidden');});
 $('btnHofClose').addEventListener('click',()=>$('hofBox').classList.add('hidden'));
 armButton($('btnQuit'),()=>{$('menuBox').classList.add('hidden');gameOver('quit');});
 $('btnFinalContinue').addEventListener('click',()=>{$('finalBox').classList.add('hidden');S.running=true;last=performance.now();});
@@ -851,8 +911,9 @@ function importCode(code){try{const j=JSON.parse(decodeURIComponent(escape(atob(
 let last=performance.now();
 function loop(now){const dt=Math.min(0.05,(now-last)/1000)*0.8*SET.spd;last=now;if(S.running)update(dt);renderer.render(scene,camera);requestAnimationFrame(loop);}
 
-function start(){const raw=($('labName').value||'').trim();const code=raw.toLowerCase();const cheat=/^(ending|엔딩)$/.test(code)?'final':/^(nobel|노벨)$/.test(code)?'nobel':/^(nature|네이처)$/.test(code)?'nature':null;
+function start(){const raw=($('labName').value||'').trim();const code=raw.toLowerCase();const cheat=code==='developer-ending'?'final':code==='developer-nobel'?'nobel':code==='developer-nature'?'nature':code==='developer-status'?'status':null;
   if(!cheat&&raw)S.labName=raw;if(!S.labName)S.labName='우리 연구실';$('labName').value=S.labName;save();S.running=true;
+  if(cheat==='status'){S.running=false;showStatus();return;}
   if(cheat==='final')setTimeout(showFinal,300);else if(cheat==='nobel')setTimeout(showEnding,300);else if(cheat==='nature')setTimeout(()=>startParty('nature'),300);$('start').classList.add('hidden');bgmStart();beep(660,0.1,'triangle',0.04);}
 $('btnStart').addEventListener('click',start);
 $('mute').addEventListener('click',()=>{audio();setMute(!muted);});
@@ -864,6 +925,7 @@ $('spdRange').addEventListener('input',e=>{SET.spd=+e.target.value;$('spdLab').t
 $('btnExport').addEventListener('click',()=>{const code=exportCode();$('saveCode').value=code;$('saveCode').select();let ok=false;try{document.execCommand('copy');ok=true;}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>{$('saveMsg').textContent='복사됨 — 메모에 붙여넣어 보관하세요';}).catch(()=>{$('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});else $('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});
 armButton($('btnImport'),()=>{if(importCode($('saveCode').value)){$('saveMsg').textContent='불러오는 중…';location.reload();}else $('saveMsg').textContent='코드가 올바르지 않습니다';});
 
+$('verNote').textContent='v'+VERSION;logVisit();
 if(load()){$('labName').value=S.labName||'';$('saveNote').textContent='저장된 진행 상황을 불러왔습니다 — 논문 '+S.accepted+'편 · '+fmt(S.money);}
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
 for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');if(S.lv.admin>0)spawnAdmin();
