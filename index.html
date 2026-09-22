@@ -14,8 +14,7 @@
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:"Apple SD Gothic Neo",-apple-system,"Segoe UI",system-ui,sans-serif;overflow:hidden;touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #wrap{position:relative;width:100%;height:100%}
-canvas{display:block;width:100%;height:100%;touch-action:none;-webkit-touch-callout:none}
-#wrap{touch-action:none}
+canvas{display:block;width:100%;height:100%}
 .hud{position:absolute;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 #tl{top:10px;left:12px;display:flex;flex-direction:column;gap:4px}
 #money{font-size:1.7rem;font-weight:800;color:var(--gold)}
@@ -39,7 +38,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none;-webkit-touch-call
 .lab3d .pb i{display:block;height:100%;background:#5ee38a;width:0}
 #joy{position:absolute;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.35);display:none;pointer-events:none;transform:translate(-50%,-50%)}
 #knob{position:absolute;left:50%;top:50%;width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.75);transform:translate(-50%,-50%)}
-.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px;background:rgba(6,12,24,.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:26px;touch-action:pan-y;-webkit-overflow-scrolling:touch;background:rgba(6,12,24,.8);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .overlay h1{font-size:2.2rem;margin:0 0 10px;letter-spacing:-.03em}
 .overlay p{margin:6px 0;line-height:1.55;max-width:24em;font-size:1rem}
 .overlay .sub{opacity:.8;font-size:.9rem}
@@ -88,6 +87,11 @@ canvas{display:block;width:100%;height:100%;touch-action:none;-webkit-touch-call
 #fireTint{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(255,60,0,.45) 100%);animation:fireFlick .25s infinite alternate}
 #fireTint.on{opacity:1}
 @keyframes fireFlick{from{filter:brightness(1)}to{filter:brightness(1.35)}}
+.overlay.scroll{justify-content:flex-start;overflow-y:auto;padding-top:calc(18px + env(safe-area-inset-top,0px));padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+.overlay.scroll h1{font-size:1.9rem;margin:2px 0 6px}
+.overlay.scroll .steps{font-size:.88rem;line-height:1.55}
+.overlay.scroll p{margin:4px 0;font-size:.95rem}
+.overlay.scroll .sub{font-size:.85rem}
 #toast{position:absolute;left:50%;bottom:calc(60px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel);padding:8px 14px;border-radius:10px;font-weight:700;font-size:.9rem;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -111,7 +115,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none;-webkit-touch-call
   <div id="fireTint"></div>
   <div id="partyPop"></div>
 
-  <div id="start" class="overlay">
+  <div id="start" class="overlay scroll">
+    <p class="sub" style="margin:0 0 4px"><a href="#" id="langToggle" style="color:#fff;font-weight:700">🇺🇸 English</a></p>
     <h1>🔬 연구실에서 살아남기</h1>
     <p class="sub">드래그 = 조이스틱 이동. 가까이 가면 자동으로 행동합니다.</p>
     <div class="steps">
@@ -128,7 +133,6 @@ canvas{display:block;width:100%;height:100%;touch-action:none;-webkit-touch-call
     <p class="sub" id="inappNote" style="display:none;color:#ffd23d">📵 인스타그램 앱 안 브라우저에서는 저장이 유지되지 않을 수 있어요. 오른쪽 위 ··· → "브라우저에서 열기"로 여세요.</p>
     <button class="btn ghost" id="btnRankStart">🏆 랭킹 보기</button>
     <p class="sub" id="verNote"></p>
-    <p class="sub"><a href="#" id="langToggle" style="color:#fff">🇺🇸 English</a></p>
     <p class="sub">🏆 엔딩·파산·안식년 시점의 성적이 전체 랭킹에 연구실 이름으로 올라갑니다.</p>
     <p class="sub" id="saveNote"></p>
   </div>
@@ -601,17 +605,6 @@ const joyEl=$('joy'),knob=$('knob');
 cv.addEventListener('pointerdown',e=>{joy.active=true;joy.bx=e.clientX;joy.by=e.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=e.clientX+'px';joyEl.style.top=e.clientY+'px';knob.style.transform='translate(-50%,-50%)';try{cv.setPointerCapture(e.pointerId);}catch(err){}});
 cv.addEventListener('pointermove',e=>{if(!joy.active)return;let dx=e.clientX-joy.bx,dy=e.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';});
 const joyEnd=()=>{joy.active=false;joy.mag=0;joyEl.style.display='none';};
-// iOS: block the browser's own pan/zoom gestures so pointer events are not cancelled
-const noTouch=e=>{e.preventDefault();};
-cv.addEventListener('touchstart',noTouch,{passive:false});cv.addEventListener('touchmove',noTouch,{passive:false});cv.addEventListener('touchend',noTouch,{passive:false});
-document.addEventListener('gesturestart',noTouch,{passive:false});
-// touch fallback for browsers without reliable pointer events
-if(!window.PointerEvent){
-  cv.addEventListener('touchstart',e=>{const t=e.touches[0];joy.active=true;joy.bx=t.clientX;joy.by=t.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=t.clientX+'px';joyEl.style.top=t.clientY+'px';knob.style.transform='translate(-50%,-50%)';},{passive:false});
-  cv.addEventListener('touchmove',e=>{if(!joy.active)return;const t=e.touches[0];let dx=t.clientX-joy.bx,dy=t.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';},{passive:false});
-  cv.addEventListener('touchend',joyEnd);cv.addEventListener('touchcancel',joyEnd);
-}
-cv.addEventListener('pointerup',joyEnd);cv.addEventListener('pointercancel',joyEnd);
 const keys={};window.addEventListener('keydown',e=>keys[e.key]=true);window.addEventListener('keyup',e=>keys[e.key]=false);
 
 /* ---------------- logic ---------------- */
@@ -1097,7 +1090,8 @@ requestAnimationFrame(loop);
   <div id="fireTint"></div>
   <div id="partyPop"></div>
 
-  <div id="start" class="overlay">
+  <div id="start" class="overlay scroll">
+    <p class="sub" style="margin:0 0 4px"><a href="#" id="langToggle" style="color:#fff;font-weight:700">🇰🇷 한국어</a></p>
     <h1>🔬 Lab Survival</h1>
     <p class="sub">Drag = joystick. Stand near things to act automatically.</p>
     <div class="steps">
@@ -1114,7 +1108,6 @@ requestAnimationFrame(loop);
     <p class="sub" id="inappNote" style="display:none;color:#ffd23d">📵 Saves may not persist in the Instagram in-app browser. Tap ··· (top right) → "Open in browser".</p>
     <button class="btn ghost" id="btnRankStart">🏆 Rankings</button>
     <p class="sub" id="verNote"></p>
-    <p class="sub"><a href="#" id="langToggle" style="color:#fff">🇰🇷 한국어</a></p>
     <p class="sub">🏆 Your results at endings, bankruptcy and sabbaticals are posted to the global rankings under your lab name.</p>
     <p class="sub" id="saveNote"></p>
   </div>
@@ -1587,17 +1580,6 @@ const joyEl=$('joy'),knob=$('knob');
 cv.addEventListener('pointerdown',e=>{joy.active=true;joy.bx=e.clientX;joy.by=e.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=e.clientX+'px';joyEl.style.top=e.clientY+'px';knob.style.transform='translate(-50%,-50%)';try{cv.setPointerCapture(e.pointerId);}catch(err){}});
 cv.addEventListener('pointermove',e=>{if(!joy.active)return;let dx=e.clientX-joy.bx,dy=e.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';});
 const joyEnd=()=>{joy.active=false;joy.mag=0;joyEl.style.display='none';};
-// iOS: block the browser's own pan/zoom gestures so pointer events are not cancelled
-const noTouch=e=>{e.preventDefault();};
-cv.addEventListener('touchstart',noTouch,{passive:false});cv.addEventListener('touchmove',noTouch,{passive:false});cv.addEventListener('touchend',noTouch,{passive:false});
-document.addEventListener('gesturestart',noTouch,{passive:false});
-// touch fallback for browsers without reliable pointer events
-if(!window.PointerEvent){
-  cv.addEventListener('touchstart',e=>{const t=e.touches[0];joy.active=true;joy.bx=t.clientX;joy.by=t.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=t.clientX+'px';joyEl.style.top=t.clientY+'px';knob.style.transform='translate(-50%,-50%)';},{passive:false});
-  cv.addEventListener('touchmove',e=>{if(!joy.active)return;const t=e.touches[0];let dx=t.clientX-joy.bx,dy=t.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';},{passive:false});
-  cv.addEventListener('touchend',joyEnd);cv.addEventListener('touchcancel',joyEnd);
-}
-cv.addEventListener('pointerup',joyEnd);cv.addEventListener('pointercancel',joyEnd);
 const keys={};window.addEventListener('keydown',e=>keys[e.key]=true);window.addEventListener('keyup',e=>keys[e.key]=false);
 
 /* ---------------- logic ---------------- */
