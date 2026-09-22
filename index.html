@@ -172,7 +172,7 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">안식년 떠나기 (처음부터 · 수익 +25% 영구)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.0.0</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.0.1</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
@@ -197,7 +197,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.0.0';const LANG='ko';
+const VERSION='2.0.1';const LANG='ko';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -763,9 +763,7 @@ function update(dt){
     else if(r<0.58){const g=20000+S.accepted*1500;S.money+=g;S.event={k:'grant',t:4,msg:'📜 교수님 소액 과제! +'+fmt(g)};beep(900,0.2,'triangle',0.06);}
     else if(r<0.72){S.event={k:'cut',t:40,msg:'✂️ R&D 예산 삭감! 논문 단가 −30%'};beep(150,0.4,'sawtooth',0.05);}
     else if(r<0.84){S.event={k:'raise',t:40,msg:'📈 연구비 인상! 논문 단가 +30%'};beep(900,0.2,'triangle',0.06);}
-    else if(r<0.88){if(S.grant){const g=GRANTS[S.grant.tier];S.money+=Math.round(g.cost*0.5);S.grant=null;S.event={k:'stop',t:5,msg:'🛑 국가과제 중단! 심사 취소 · 지원비 50% 환급'};}else if(S.grantBonus>0){S.grantBonus=Math.max(0,S.grantBonus-0.05);S.event={k:'stop',t:5,msg:'🛑 과제 중단! 단가 보너스 −5%p'};}else{S.event={k:'stop',t:4,msg:'🛑 국가과제 중단 소식… 우리 랩은 무사'};}beep(120,0.5,'sawtooth',0.05);}
-    else if(r<0.94&&!S.fire){startFire();S.event={k:'fire',t:6,msg:'🔥 화재 발생! 모두 소화기를 들어라'};}
-    else if(r<0.97&&S.blackout<=0){S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};beep(80,0.8,'sawtooth',0.07);}
+    else if(r<0.93){if(S.grant){const g=GRANTS[S.grant.tier];S.money+=Math.round(g.cost*0.5);S.grant=null;S.event={k:'stop',t:5,msg:'🛑 국가과제 중단! 심사 취소 · 지원비 50% 환급'};}else if(S.grantBonus>0){S.grantBonus=Math.max(0,S.grantBonus-0.05);S.event={k:'stop',t:5,msg:'🛑 과제 중단! 단가 보너스 −5%p'};}else{S.event={k:'stop',t:4,msg:'🛑 국가과제 중단 소식… 우리 랩은 무사'};}beep(120,0.5,'sawtooth',0.05);}
     else{const n=instruments.filter(x=>!x.broken&&S.wings[x.wing]);if(n.length){const v=n[ri(0,n.length-1)];v.hp=0;v.broken=true;v.repairT=15;pop(v.x,2.4,v.z,'💥 고장!','#ff5f6d');}S.event={k:'break',t:4,msg:'💥 장비 노후화로 하나가 고장났다'};}
     $('banner').classList.add('on');}}
 
@@ -783,6 +781,11 @@ function update(dt){
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 과제 공고 마감');}}
   if(!S.deptIntro&&S.accepted>=20){S.deptIntro=true;S.call={t:50};save();S.running=false;$('introBox').classList.remove('hidden');}
   if(S.grudge>0)S.grudge=Math.max(0,S.grudge-0.5*dt);
+  // scheduled disasters: ~5 min fire / ~7 min blackout at 1.0x (game time runs at 0.8x real)
+  if(S.fireT===undefined){S.fireT=rnd(200,280);S.darkT=rnd(290,380);}
+  if(!S.fire&&S.blackout<=0){S.fireT-=dt;S.darkT-=dt;}
+  if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 화재 발생! 모두 소화기를 들어라'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
+  if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};beep(80,0.8,'sawtooth',0.07);}}
   updateFire(dt);updateBlackout(dt);
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ 휴가 끝 — 다시 출근');}
   if(S.semT<20&&S.semT+dt>=20&&S.money<payroll())toast('⚠️ 20초 뒤 인건비 '+fmt(payroll())+' — 잔고 부족!');
@@ -1097,7 +1100,7 @@ requestAnimationFrame(loop);
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">Take a sabbatical (restart · +25% income forever)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.0.0</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.0.1</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ Settings</b><br>
@@ -1122,7 +1125,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='Could not loa
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.0.0';const LANG='en';
+const VERSION='2.0.1';const LANG='en';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -1688,9 +1691,7 @@ function update(dt){
     else if(r<0.58){const g=20000+S.accepted*1500;S.money+=g;S.event={k:'grant',t:4,msg:'📜 Small grant from your advisor! +'+fmt(g)};beep(900,0.2,'triangle',0.06);}
     else if(r<0.72){S.event={k:'cut',t:40,msg:'✂️ R&D budget cut! Paper value −30%'};beep(150,0.4,'sawtooth',0.05);}
     else if(r<0.84){S.event={k:'raise',t:40,msg:'📈 Funding raised! Paper value +30%'};beep(900,0.2,'triangle',0.06);}
-    else if(r<0.88){if(S.grant){const g=GRANTS[S.grant.tier];S.money+=Math.round(g.cost*0.5);S.grant=null;S.event={k:'stop',t:5,msg:'🛑 Grant program halted! Review cancelled · 50% refund'};}else if(S.grantBonus>0){S.grantBonus=Math.max(0,S.grantBonus-0.05);S.event={k:'stop',t:5,msg:'🛑 Grant terminated! Value bonus −5%p'};}else{S.event={k:'stop',t:4,msg:'🛑 National grants cut… our lab is fine'};}beep(120,0.5,'sawtooth',0.05);}
-    else if(r<0.94&&!S.fire){startFire();S.event={k:'fire',t:6,msg:'🔥 Fire! Everyone grab an extinguisher'};}
-    else if(r<0.97&&S.blackout<=0){S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};beep(80,0.8,'sawtooth',0.07);}
+    else if(r<0.93){if(S.grant){const g=GRANTS[S.grant.tier];S.money+=Math.round(g.cost*0.5);S.grant=null;S.event={k:'stop',t:5,msg:'🛑 Grant program halted! Review cancelled · 50% refund'};}else if(S.grantBonus>0){S.grantBonus=Math.max(0,S.grantBonus-0.05);S.event={k:'stop',t:5,msg:'🛑 Grant terminated! Value bonus −5%p'};}else{S.event={k:'stop',t:4,msg:'🛑 National grants cut… our lab is fine'};}beep(120,0.5,'sawtooth',0.05);}
     else{const n=instruments.filter(x=>!x.broken&&S.wings[x.wing]);if(n.length){const v=n[ri(0,n.length-1)];v.hp=0;v.broken=true;v.repairT=15;pop(v.x,2.4,v.z,'💥 Broken!','#ff5f6d');}S.event={k:'break',t:4,msg:'💥 An aging instrument broke down'};}
     $('banner').classList.add('on');}}
 
@@ -1708,6 +1709,11 @@ function update(dt){
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 Grant call closed');}}
   if(!S.deptIntro&&S.accepted>=20){S.deptIntro=true;S.call={t:50};save();S.running=false;$('introBox').classList.remove('hidden');}
   if(S.grudge>0)S.grudge=Math.max(0,S.grudge-0.5*dt);
+  // scheduled disasters: ~5 min fire / ~7 min blackout at 1.0x (game time runs at 0.8x real)
+  if(S.fireT===undefined){S.fireT=rnd(200,280);S.darkT=rnd(290,380);}
+  if(!S.fire&&S.blackout<=0){S.fireT-=dt;S.darkT-=dt;}
+  if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 Fire! Everyone grab an extinguisher'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
+  if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};beep(80,0.8,'sawtooth',0.07);}}
   updateFire(dt);updateBlackout(dt);
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ Vacation over — back to work');}
   if(S.semT<20&&S.semT+dt>=20&&S.money<payroll())toast('⚠️ Payroll in 20s: '+fmt(payroll())+' — balance too low!');
