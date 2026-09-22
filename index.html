@@ -60,7 +60,7 @@ canvas{display:block;width:100%;height:100%}
 .dept label{display:block;margin:6px 0;font-weight:700}
 .dept input[type=range]{width:100%;margin-top:4px}
 .dept textarea{width:100%;box-sizing:border-box;margin-top:6px;font:inherit;font-size:.75rem;border-radius:8px;border:0;padding:6px;background:rgba(0,0,0,.35);color:#fff;resize:none}
-.dept .row{display:flex;gap:8px}.dept .row .act{margin:6px 0 0}
+.dept .row .act{margin:6px 0 0}
 .labname{margin-top:8px;width:min(80vw,300px);font:inherit;font-size:1rem;font-weight:700;text-align:center;padding:10px 12px;border-radius:12px;border:2px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;outline:none}
 .labname:focus{border-color:var(--gold)}
 #partyPop{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) scale(0);background:linear-gradient(135deg,#ffd23d,#ff5fa2,#4fb3ff);color:#1a0a2e;font-weight:900;font-size:1.35rem;text-align:center;padding:16px 22px;border-radius:18px;box-shadow:0 0 40px rgba(255,255,255,.7);pointer-events:none;white-space:pre-line;line-height:1.5;z-index:5}
@@ -79,7 +79,9 @@ canvas{display:block;width:100%;height:100%}
 .tab{font:inherit;font-weight:800;padding:8px 18px;border-radius:999px;border:2px solid rgba(255,255,255,.3);background:transparent;color:#fff}
 .tab.on{background:var(--gold);color:#2a1a00;border-color:var(--gold)}
 .btn.ghost{background:rgba(255,255,255,.12);color:#fff;box-shadow:none;border:2px solid rgba(255,255,255,.3);margin-top:10px;padding:12px 30px;font-size:1.05rem}
-.bigrow{width:min(92vw,420px);gap:12px}
+.row,.bigrow{display:flex;gap:10px;align-items:stretch}
+.bigrow{width:min(92vw,420px);gap:10px;margin:8px 0}
+.bigact small{display:block;font-size:.7rem;line-height:1.2;margin-top:2px}
 .bigact{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;font:inherit;font-size:1rem;font-weight:800;border:0;border-radius:16px;color:#fff;cursor:pointer}
 .bigact .ico{font-size:2.2rem;line-height:1}
 #fireTint{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .5s;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(255,60,0,.45) 100%);animation:fireFlick .25s infinite alternate}
@@ -120,7 +122,9 @@ canvas{display:block;width:100%;height:100%}
     </div>
     <p class="sub">학기말마다 인건비가 나가고 연구원이 과로하면 떠납니다. 리젝은 다시 써야 하고 장비는 부서지면 15초 뒤 복구되며 체력이 떨어지면 커피가 필요합니다. 우상단 🏛에서 강의·세미나·과제 지원을 관리하세요.</p>
     <input id="labName" class="labname" maxlength="20" placeholder="연구실 이름 (예: AI 광공학 연구실)">
-    <button class="btn" id="btnStart">출근</button>
+    <div class="row" style="width:min(88vw,360px);gap:10px;margin-top:14px"><button class="bigact" id="btnEasy" style="background:#2ecc71;color:#062"><span class="ico">🌱</span>이지 모드<small style="font-weight:600;opacity:.85">연습 · 랭킹 미등록</small></button><button class="bigact" id="btnStart" style="background:#ff5a5a"><span class="ico">🔥</span>헬조선 모드<small style="font-weight:600;opacity:.85">재난 · 신맵 · 랭킹</small></button></div>
+    <p class="sub" id="modeNote"></p>
+    <p class="sub" id="inappNote" style="display:none;color:#ffd23d">📵 인스타그램 앱 안 브라우저에서는 저장이 유지되지 않을 수 있어요. 오른쪽 위 ··· → "브라우저에서 열기"로 여세요.</p>
     <button class="btn ghost" id="btnRankStart">🏆 랭킹 보기</button>
     <p class="sub" id="verNote"></p>
     <p class="sub"><a href="#" id="langToggle" style="color:#fff">🇺🇸 English</a></p>
@@ -172,7 +176,7 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">안식년 떠나기 (처음부터 · 수익 +25% 영구)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.0.1</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.1</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
@@ -185,7 +189,7 @@ canvas{display:block;width:100%;height:100%}
         <div class="row"><button class="act" id="btnExport">저장 코드 복사</button><button class="act" id="btnImport" style="background:#22c55e">코드로 불러오기</button></div>
       </div>
     </div>
-    <div class="row bigrow"><button class="bigact" id="btnRank" style="background:#ffc83d;color:#2a1a00"><span class="ico">🏆</span>랭킹 보기</button><button class="bigact" id="btnQuit" style="background:#ff5a5a"><span class="ico">💣</span>연구실 폭파</button></div>
+    <div class="row bigrow"><button class="bigact" id="btnRank" style="background:#ffc83d;color:#2a1a00"><span class="ico">🏆</span>랭킹 보기</button><button class="bigact" id="btnSaveClose" style="background:#3d7bff"><span class="ico">💾</span>저장하고 나가기</button><button class="bigact" id="btnQuit" style="background:#ff5a5a"><span class="ico">💣</span>연구실 폭파<small style="font-weight:600;opacity:.85">기록 등록 후 초기화</small></button></div>
     <button class="btn" id="btnResume">계속</button>
     <button class="btn" id="btnReset" style="background:#ff6b6b;box-shadow:0 6px 0 #b03a3a;color:#fff;margin-top:10px">처음부터</button>
   </div>
@@ -197,12 +201,14 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.0.1';const LANG='ko';
+const VERSION='2.1.1';const LANG='ko';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
 let AC=null,MASTER=null,muted=false;
 const SET={vol:1,spd:1};
+let MODE='hard';try{MODE=localStorage.getItem('lab_mode')==='easy'?'easy':'hard';if(!localStorage.getItem('lab_save_hard')&&localStorage.getItem('lab_save')){localStorage.setItem('lab_save_hard',localStorage.getItem('lab_save'));}}catch(e){}
+const SAVE_KEY=()=>'lab_save_'+MODE;const EASY=()=>MODE==='easy';
 try{muted=localStorage.getItem('lab_mute')==='1';const j=JSON.parse(localStorage.getItem('lab_settings')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);}}catch(e){}
 function saveSettings(){try{localStorage.setItem('lab_settings',JSON.stringify(SET));}catch(e){}}
 function audio(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=muted?0:SET.vol;MASTER.connect(AC.destination);}catch(e){}return AC;}
@@ -234,7 +240,7 @@ const TITLES=[[0,'학부연구생'],[2,'석사과정'],[5,'박사과정'],[10,'�
 const S={running:false,money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,
   data:0,drafts:0,queue:0,pile:0,rev:0,wings:[true,false,false,false,false],
   stamina:100,coffeeT:0,event:null,eventT:60,t:0,lastSwing:-9,
-  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,fire:null,blackout:0,wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
+  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,fire:null,blackout:0,flood:0,quitCd:0,won:[false,false,false,false],wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
 window.__S=S;
 const cap=()=>10+3*S.lv.bag, students=()=>Math.max(0,1+S.lv.student), reviewers=()=>1+S.lv.reviewer, dmg=()=>2+S.lv.club;
 const writeTime=()=>6.5*Math.pow(0.85,S.lv.write)*effWrite();
@@ -242,13 +248,13 @@ const acceptRate=()=>clamp(0.35+0.08*S.lv.reviewer+0.02*S.lv.write+S.collabBonus
 const effWrite=()=>(S.labCoffee>0?0.6:1)*(S.bonusT>0?0.5:S.slumpT>0?1.4:1);
 const effSpeed=()=>(S.labCoffee>0?1.4:1)*(S.bonusT>0?1.5:S.slumpT>0?0.8:1);
 const dropMult=()=>S.buff&&S.buff.k==='data'?1.5:1;
-const speedMult=()=>(S.buff&&S.buff.k==='speed'?1.3:1)*(S.teach?0.85:1);
+const speedMult=()=>(S.buff&&S.buff.k==='speed'?1.3:1)*(S.teach?0.85:1)*(S.flood>0?0.45:1);
 const paperValue=()=>Math.round((6000+S.accepted*150)*(S.event&&S.event.k==='conf'?2:S.event&&S.event.k==='cut'?0.7:S.event&&S.event.k==='raise'?1.3:1)*(1+S.grantBonus)*(1+0.02*S.alumni)*(1+0.25*S.sabb));
 function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t=n;return t;}
 let lastSaved=null;
 let NOSAVE=false;
-function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem('lab_save',JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem('lab_save')||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
+function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
+function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,!!j.leader,!!j.national];if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
 
 /* ---------------- three setup ---------------- */
 const cv=$('c');
@@ -384,18 +390,18 @@ WINGS.forEach((w,wi)=>{
   }else if(w.gate){
     w.wall=box(0.6,2.4,52,w.gate.national?0x2b3340:0x9fb7cc,w.gate.x,1.2,-13);scene.add(w.wall);
     const stripe=box(0.62,0.25,52,w.gate.national?0x4fb3ff:0xffc83d,0,0.8,0);w.wall.add(stripe);
-    if(!w.gate.national)w.zone=addZone({kind:'gate',wing:wi,x:w.gate.x-w.gate.side*2.2,z:-9,r:1.7,color:0xffc83d,y:1.8});
+    if(!w.gate.national&&!EASY())w.zone=addZone({kind:'gate',wing:wi,x:w.gate.x-w.gate.side*2.2,z:-9,r:1.7,color:0xffc83d,y:1.8});
     if(S.wings[wi]){w.wall.visible=false;}
   }
 });
 function applyWings(){WINGS.forEach((w,i)=>{if(w.wall&&!w.sinking)w.wall.visible=!S.wings[i];if(w.hidden&&S.wings[i])instruments.forEach(ins=>{if(ins.wing===i&&!ins.g.visible){ins.g.visible=true;ins.appear=1;}});});}
 
 /* ---------------- hired workers (석사생 / 박사생) ---------------- */
-const workers=[];
+const workers=[];window.__W=workers;
 function spawnWorker(kind){
   const c=makeChar(kind==='ms'?0x2bb5a0:kind==='phd'?0xe0a020:0xf2f2f2,kind==='pd'?1.0:0.9,{hair:kind==='ms'?0x222:kind==='phd'?0x4a2a10:0x777,glasses:kind!=='ms'});
   const sg=new THREE.Group();sg.position.set(0,1.15,-0.38);c.g.add(sg);const st=[];for(let i=0;i<(kind==='pd'?12:6);i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.07,0.7),kind==='ms'?paperMatW:paperMatY);m.position.y=i*0.08;m.visible=false;sg.add(m);st.push(m);}
-  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:420,fat:0};
+  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:420,fat:rnd(0,30),fatRate:rnd(0.75,1.25)};
   w.el=document.createElement('div');w.el.className='lab3d no';w.el.style.display='none';$('labels').appendChild(w.el);
   c.g.position.set(kind==='phd'?-12:-4+workers.length,0,5);scene.add(c.g);workers.push(w);
 }
@@ -419,9 +425,13 @@ function updateWorkers(dt){
     if(S.fire){const f=S.fire.ins;const d=Math.hypot(f.x-p.x,f.z-p.z);if(d>2.6)moveTo(w,f.x,f.z,dt,4.5);else{w.g.rotation.y=Math.atan2(f.x-p.x,f.z-p.z);w.ch.ra.rotation.x=-1.3+Math.sin(S.t*25)*0.2;}w.el.style.display='none';continue;}
     if(S.blackout>0){w.ch.la.rotation.x=0;w.ch.ra.rotation.x=0;w.el.style.display='none';continue;}
     if(S.vacT>0){w.fat=Math.max(0,w.fat-10*dt);w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;p.y=Math.abs(Math.sin(S.t*3+w.ph))*0.05;w.el.style.display='none';continue;}
-    w.fat=Math.min(100,w.fat+0.4*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
+    w.fat=Math.min(100,w.fat+0.4*(w.fatRate||1)*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
+    if(S.quitCd>0&&w.fat>=99&&!EASY())w.fat=99;
     if(w.fat>=80&&!w.warned){w.warned=true;toast('😫 '+(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥')+' 피로 80% — 🏛에서 회식이나 휴가');}if(w.fat<60)w.warned=false;
-    if(w.fat>=100){scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥');save();continue;}
+    if(w.fat>=100&&EASY()){w.fat=0;w.rest=20;toast('😴 '+(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥')+'이 지쳐서 20초 휴식');continue;}
+    if(w.rest>0){w.rest-=dt;w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;w.el.style.display='none';continue;}
+    if(w.fat>=100&&S.quitCd>0)w.fat=99;
+    if(w.fat>=100){S.quitCd=20;scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥');save();continue;}
     if(w.fat>=70){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' 피로 '+Math.round(w.fat)+'%';projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
     if(w.kind==='ms'||w.kind==='pd'){
       if(w.state==='seek'){
@@ -491,6 +501,18 @@ function updateFire(dt){
   if(f.spreadT<=0){f.spreadT=14;const cand=instruments.filter(x=>!x.broken&&x!==f.ins&&S.wings[x.wing]&&x.g.visible);if(cand.length){const v=cand[ri(0,cand.length-1)];v.hp=0;v.broken=true;v.repairT=30;pop(v.x,2.4,v.z,'🔥 불이 번졌다!','#ff5f6d');}}
   if(f.t>45){endFire(false);return;}
   $('banner').textContent='🔥 화재 진화 '+Math.round(100-f.hp)+'% — 장비 옆에 서서 끄세요 (연구원 '+workers.length+'명 투입)';$('banner').classList.add('on');
+}
+/* ---------------- flood ---------------- */
+const floodMesh=new THREE.Mesh(new THREE.PlaneGeometry(64,52,1,1),new THREE.MeshBasicMaterial({color:0x3b8bd6,transparent:true,opacity:0.5}));floodMesh.rotation.x=-Math.PI/2;floodMesh.position.set(0,-0.6,-13);floodMesh.visible=false;scene.add(floodMesh);
+function startFlood(){
+  S.flood=20;floodMesh.visible=true;
+  const cand=instruments.filter(x=>!x.broken&&S.wings[x.wing]&&x.g.visible);for(let i=0;i<2&&cand.length;i++){const v=cand.splice(ri(0,cand.length-1),1)[0];v.hp=0;v.broken=true;v.repairT=30;pop(v.x,2.4,v.z,'🌊 침수!','#4fb3ff');}
+  S.event={k:'flood',t:20,msg:'🌊 물난리! 이동 느려짐 · 장비 침수'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');beep(150,0.7,'sine',0.07);
+}
+function updateFlood(dt){
+  if(S.flood>0){S.flood-=dt;floodMesh.position.y=Math.min(0.32,floodMesh.position.y+dt*0.4)+Math.sin(S.t*3)*0.02;floodMesh.material.opacity=0.45+Math.sin(S.t*2)*0.05;
+    if(S.flood<=0){toast('🌊 물이 빠졌다');}}
+  else if(floodMesh.visible){floodMesh.position.y-=dt*0.5;if(floodMesh.position.y<-0.6)floodMesh.visible=false;}
 }
 /* ---------------- blackout ---------------- */
 const hemi=scene.children.find(o=>o.isHemisphereLight);
@@ -652,7 +674,7 @@ function update(dt){
       else if(r<0.38&&reviewers()>1){S.lv.reviewer--;layoutProfs();toast('🚪 리뷰어가 사직했다 (리뷰어 −1)');}
       else pop(pc.g.position.x-1,2.6,pc.g.position.z,['😵 리뷰어 2 응징','🤕 "minor revision…"','💫 편집장에게 이를 거야'][ri(0,2)],'#ffb340');}
     else if(st){timers.swing=0.6;S.lastSwing=S.t;S.stamina-=5;player.g.rotation.y=Math.PI;st.whip=12;beep(300,0.08,'square',0.05);S.grudge=Math.min(100,S.grudge+12);S.wfat=Math.min(100,S.wfat+8);
-      if(Math.random()<0.03+S.grudge*0.006){S.lv.student--;layoutStudents();if(students()<=0){gameOver('exodus');}else toast('🏃 학생이 도망갔다 (집필 학생 −1) · 불만 '+Math.round(S.grudge)+'%');}
+      if(Math.random()<0.03+S.grudge*0.006){S.lv.student--;layoutStudents();if(students()<=0){if(EASY()){S.lv.student=0;layoutStudents();toast('🏃 학생이 도망갔다가… 이지 모드라 돌아왔다');}else gameOver('exodus');}else toast('🏃 학생이 도망갔다 (집필 학생 −1) · 불만 '+Math.round(S.grudge)+'%');}
       else if(S.grudge>=50&&Math.random()<0.3)pop(st.g.position.x,2.4,st.g.position.z,['😡 노동청에 신고할 거예요','📱 에브리타임에 올린다','😤 랩 옮길래요'][ri(0,2)],'#ff5f6d');
       else pop(st.g.position.x,2.4,st.g.position.z,['😱 열심히 쓰겠습니다','⌨️⌨️⌨️','😭 오늘 밤샘','📝 12초간 2배속'][ri(0,3)],'#ffd23d');}
   }
@@ -716,7 +738,7 @@ function update(dt){
 
   // students write
   if(S.vacT>0){S.wfat=Math.max(0,S.wfat-10*dt);}
-  else if(S.queue>0){S.wfat=Math.min(100,S.wfat+0.3*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);if(S.wfat>=80&&!S.wwarned){S.wwarned=true;toast('😫 집필 학생 피로 80% — 🏛에서 회식이나 휴가');}if(S.wfat<60)S.wwarned=false;if(S.wfat>=100){S.wfat=55;if(students()>1){S.lv.student--;layoutStudents();}overworkQuit('집필 학생');save();}}
+  else if(S.queue>0){S.wfat=Math.min(100,S.wfat+0.3*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);if(S.wfat>=80&&!S.wwarned){S.wwarned=true;toast('😫 집필 학생 피로 80% — 🏛에서 회식이나 휴가');}if(S.wfat<60)S.wwarned=false;if(S.wfat>=100){if(EASY()){S.wfat=0;toast('😴 집필 학생들이 지쳐서 잠시 쉰다');S.vacT=Math.max(S.vacT,10);}else{S.wfat=55;if(students()>1){S.lv.student--;layoutStudents();}overworkQuit('집필 학생');save();}}}
   else S.wfat=Math.max(0,S.wfat-1.5*dt);
   while(timers.write.length<students())timers.write.push(rnd(0,writeTime()));
   timers.write.length=students();
@@ -775,15 +797,17 @@ function update(dt){
 
   // semester / teaching
   S.semT-=dt;
-  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 학기 종료 · 강의료 +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=payroll();S.money-=pay;if(S.money<0){toast('💸 인건비 '+fmt(pay)+' 지급 — 잔고 부족! 다음 학기까지 갚지 못하면 파산');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 학기말 인건비 '+fmt(pay)+' 지급');if(S.debtT)S.debtT=0;}
-  if(S.money<0&&S.debtT>=2){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
+  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 학기 종료 · 강의료 +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0){toast('💸 인건비 '+fmt(pay)+' 지급 — 잔고 부족! 다음 학기까지 갚지 못하면 파산');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 학기말 인건비 '+fmt(pay)+' 지급');if(S.debtT)S.debtT=0;}
+  if(S.money<0&&S.debtT>=2&&!EASY()){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
   if(S.accepted>=20){S.call={t:50};toast('📜 과제 공고 시작 — 50초 안에 🏛에서 지원');beep(1100,0.15,'square',0.05);}save();}
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 과제 공고 마감');}}
   if(!S.deptIntro&&S.accepted>=20){S.deptIntro=true;S.call={t:50};save();S.running=false;$('introBox').classList.remove('hidden');}
-  if(S.grudge>0)S.grudge=Math.max(0,S.grudge-0.5*dt);
+  if(S.grudge>0)S.grudge=Math.max(0,S.grudge-0.5*dt);if(S.quitCd>0)S.quitCd-=dt;
   // scheduled disasters: ~5 min fire / ~7 min blackout at 1.0x (game time runs at 0.8x real)
-  if(S.fireT===undefined){S.fireT=rnd(200,280);S.darkT=rnd(290,380);}
-  if(!S.fire&&S.blackout<=0){S.fireT-=dt;S.darkT-=dt;}
+  if(S.fireT===undefined){S.fireT=rnd(200,280);S.darkT=rnd(290,380);S.floodT=rnd(480,600);}
+  if(!EASY()&&!S.fire&&S.blackout<=0&&S.flood<=0){S.fireT-=dt;S.darkT-=dt;S.floodT-=dt;}
+  if(S.floodT<=0){if(S.party>0)S.floodT=15;else{S.floodT=rnd(480,600);startFlood();}}
+  updateFlood(dt);
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 화재 발생! 모두 소화기를 들어라'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};beep(80,0.8,'sawtooth',0.07);}}
   updateFire(dt);updateBlackout(dt);
@@ -793,10 +817,10 @@ function update(dt){
   if(S.bonusT>0){S.bonusT-=dt;if(S.bonusT<=0){S.slumpT=15;toast('😮‍💨 수당 효과 끝 — 15초간 번아웃');}}else if(S.slumpT>0)S.slumpT-=dt;
   if(S.collabCd>0)S.collabCd-=dt;
   if(S.collab){S.collab.t-=dt;if(S.collab.t<=0){const c=COLLABS[S.collab.k];const v=paperValue()*c.papers;S.accepted+=c.papers;S.money+=v;if(c.acc){S.collabBonus=Math.min(0.05,S.collabBonus+c.acc);}toast('🤝 '+c.name+' 공동연구 완료! 논문 +'+c.papers+'편 · +'+fmt(v)+(c.acc?' · 채택률 +1%p 영구':''));beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);S.collab=null;save();}}
-  if(S.lv.admin>0&&S.call&&!S.grant){S.adminT=(S.adminT||0)+dt;if(S.adminT>3){S.adminT=0;let pick=-1;GRANTS.forEach((g,i)=>{if(S.accepted>=g.need&&S.money>=g.cost)pick=i;});if(pick>=0){const g=GRANTS[pick];spend(g.cost);S.grant={tier:pick,t:g.t};toast('🗂️ 행정직원이 '+g.name+' 제안서를 제출했다');beep(1000,0.1,'triangle',0.04);}}}
+  if(S.lv.admin>0&&S.call&&!S.grant){S.adminT=(S.adminT||0)+dt;if(S.adminT>3){S.adminT=0;let pick=-1;GRANTS.forEach((g,i)=>{if(grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost)pick=i;});if(pick>=0){const g=GRANTS[pick];spend(g.cost);S.grant={tier:pick,t:g.t};toast('🗂️ 행정직원이 '+g.name+' 제안서를 제출했다');beep(1000,0.1,'triangle',0.04);}}}
   if(S.buff){S.buff.t-=dt;if(S.buff.t<=0)S.buff=null;}
   if(S.grant){S.grant.t-=dt;if(S.grant.t<=0){const g=GRANTS[S.grant.tier];const pr=grantProb(g);
-    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;if(!S.wings[4]){openWing(WINGS[4],4);}const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 국가과제 효과: 석사 '+addMs+'명 · 박사 '+addPhd+'명 대량 채용 · 데이터센터 개방!'),1800);}toast('🎉 '+g.name+' 선정! +'+fmt(rw)+' · 논문 단가 +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
+    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;S.won[S.grant.tier]=true;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;if(!S.wings[4]&&!EASY()){openWing(WINGS[4],4);}const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 국가과제 효과: 석사 '+addMs+'명 · 박사 '+addPhd+'명 대량 채용 · 데이터센터 개방!'),1800);}toast('🎉 '+g.name+' 선정! +'+fmt(rw)+' · 논문 단가 +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
     else{toast('😞 '+g.name+' 탈락… 다음 기회에');beep(180,0.3,'sawtooth',0.05);}
     S.grant=null;save();}}
   if(!S.ended&&S.accepted>=70&&S.national&&S.wings[2]){S.ended=true;save();recordRun('노벨상');showEnding();}
@@ -809,7 +833,7 @@ function update(dt){
   // HUD
   $('money').textContent=fmt(S.money);
   $('carry').textContent='📄 데이터 '+S.data+' · 📝 초고 '+S.drafts+' / '+cap();
-  $('rank').textContent=S.labName+' · '+title()+' · 논문 '+S.accepted+'편 · 리젝 '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚강의중':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸수당'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨번아웃'+Math.ceil(S.slumpT)+'s':'');
+  $('rank').textContent=(EASY()?'🌱 ':'')+S.labName+' · '+title()+' · 논문 '+S.accepted+'편 · 리젝 '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚강의중':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸수당'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨번아웃'+Math.ceil(S.slumpT)+'s':'');
   const elig=S.call&&!S.grant&&GRANTS.some(g=>S.accepted>=g.need&&S.money>=g.cost);
   $('dept').classList.toggle('blink',!!elig);$('deptArrow').classList.toggle('on',!!elig&&!deptOpen);if(elig)$('deptArrow').textContent='📜 과제 공고 '+mmss(S.call.t)+' ➜';
   $('stamFill').style.width=S.stamina+'%';$('stamLab').textContent=S.coffeeT>0?'☕ 카페인 '+Math.ceil(S.coffeeT)+'초':(S.stamina<5?'지침 — 커피가 필요해':'체력');
@@ -821,6 +845,7 @@ function projectLabel(el,x,y,z){_v.set(x,y,z).project(camera);const w=cv.clientW
 const BUFFS={data:{icon:'🧪',name:'장비 세미나',desc:'40초간 데이터 획득량 +50%'},accept:{icon:'📝',name:'논문 작성법 세미나',desc:'40초간 채택률 +25%p'},speed:{icon:'⚡',name:'랩 워크숍',desc:'40초간 모두 이동속도 +30%'}};
 const GRANTS=[{name:'신진연구',cost:15000,need:3,p:0.45,reward:60000,bonus:0.05,t:25},{name:'중견연구',cost:60000,need:12,p:0.32,reward:250000,bonus:0.10,t:35},{name:'리더연구',cost:250000,need:30,p:0.22,reward:1200000,bonus:0.20,t:45},{name:'국가전략과제',cost:800000,need:50,p:0.12,reward:5000000,bonus:0.30,t:60}];
 const grantProb=g=>clamp(g.p+0.02*S.lv.reviewer+0.01*S.alumni,0.05,0.7);
+const grantOk=i=>i===0||S.won[i-1];
 const semCost=()=>Math.round(12000+S.accepted*300);
 const COLLABS={dom:{name:'국내 대학',cost:8000,data:8,t:45,papers:1},intl:{name:'해외 대학',cost:30000,data:15,t:60,papers:2,acc:0.01}};
 const bonusCost=()=>(students()+workers.length)*1500;
@@ -880,29 +905,30 @@ function recordRun(end){
   const e={name:S.labName||'우리 연구실',papers:S.accepted,alumni:S.alumni,earned:Math.floor(S.earned),natures:S.natures,end,date:new Date().toISOString().slice(0,10)};
   e.score=e.papers*10+e.alumni*50+Math.floor(e.earned/10000)+e.natures*300;
   HOF.push(e);HOF.sort((a,b)=>b.score-a.score);HOF=HOF.slice(0,10);try{localStorage.setItem('lab_hof',JSON.stringify(HOF));}catch(err){}
-  submitScore(e);
+  if(!EASY())submitScore(e);
 }
 function hofHtml(){
   if(!HOF.length)return '<small>아직 기록 없음 — 엔딩·파산·안식년 시점의 성적이 기록됩니다</small>';
   return HOF.map((e,i)=>'<div class="hofrow">'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' <b>'+e.name+'</b> <small>'+e.score.toLocaleString()+'점 · 논문 '+e.papers+' · 졸업생 '+e.alumni+' · '+fmt(e.earned)+' · '+e.end+'</small></div>').join('');
 }
-function lockRun(){try{localStorage.setItem('lab_save',JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
-function resetRun(){NOSAVE=true;try{localStorage.setItem('lab_save',JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}location.reload();}
+function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
+function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}location.reload();}
 function gameOver(kind){
   if(S.gameover)return;S.gameover=kind;S.running=false;lockRun();recordRun(kind==='bankrupt'?'파산':kind==='overwork'?'과로':kind==='exodus'?'학생 도주':'종료');
   const lab=S.labName||'우리 연구실';
   $('goTitle').textContent=kind==='bankrupt'?'💸 파산 — 연구실 폐쇄':kind==='overwork'?'😵 과로 — 연구실 해체':kind==='exodus'?'🏃 학생 전원 도주 — 지도 자격 박탈':'🏁 연구실 운영 종료';
   $('goBody').innerHTML=(kind==='exodus'?'<p>'+lab+'의 집필 학생이 한 명도 남지 않았습니다.<br>몽둥이로 학생을 다스리던 교수는 학과 징계를 받았습니다.</p><p class="sub">학생을 때릴수록 불만이 쌓이고 도주 확률이 올라갑니다. 회식으로 달래세요.</p>':kind==='quit'?'<p>'+lab+'의 운영을 여기서 마칩니다.<br>기록은 명예의 전당에 남았습니다.</p>':kind==='bankrupt'
     ?'<p>'+lab+'이 두 학기 연속 인건비를 주지 못했습니다.<br>학생들은 다른 랩으로 떠났고 장비는 압류됐습니다.</p><p class="sub">고정비는 학기말마다 나갑니다. 🏛 탭에서 다음 인건비를 미리 확인하세요.</p>'
-    :'<p>'+lab+'에서 연구원 두 명이 과로로 떠났습니다.<br>노동청 감사 후 연구실은 해체됐습니다.</p><p class="sub">피로도는 🏛 탭에서 보이고 회식과 휴가로 내릴 수 있습니다.</p>')+
+    :'<p>'+lab+'에서 연구원 네 명이 과로로 떠났습니다.<br>노동청 신고 두 번 뒤에도 바뀐 게 없어 연구실은 해체됐습니다.</p><p class="sub">피로도는 🏛 탭에서 보이고 회식과 휴가로 내릴 수 있습니다.</p>')+
     '<p class="sub">논문 '+S.accepted+'편 · 졸업생 '+S.alumni+'명 · 누적 연구비 '+fmt(S.earned)+'</p>';
   $('goBox').classList.remove('hidden');
   beep(220,0.5,'sawtooth',0.06);setTimeout(()=>beep(165,0.8,'sawtooth',0.06),300);
 }
 function overworkQuit(who){
   S.overwork++;
-  if(S.overwork>=2){gameOver('overwork');return;}
-  toast('😵 '+who+'이(가) 과로로 떠났다! 한 명 더 떠나면 연구실 해체');beep(150,0.4,'sawtooth',0.06);$('banner').textContent='⚠️ 과로 경고 — 회식이나 휴가로 피로도를 낮추세요';$('banner').classList.add('on');setTimeout(()=>{if(!S.event)$('banner').classList.remove('on');},5000);
+  if(S.overwork>=4){gameOver('overwork');return;}
+  if(S.overwork>=2){S.money=Math.floor(S.money*0.5);$('banner').textContent='⚖️ 노동청 신고 접수 — 과제비 50% 삭감 ('+(S.overwork-1)+'/2회) · 한 번 더 신고되면 연구실 해체';$('banner').classList.add('on');setTimeout(()=>{if(!S.event)$('banner').classList.remove('on');},7000);toast('⚖️ 노동청 신고! 연구비 절반 삭감');beep(120,0.6,'sawtooth',0.07);save();return;}
+  toast('😵 '+who+'이(가) 과로로 떠났다! 두 명째부터 노동청에 신고된다');beep(150,0.4,'sawtooth',0.06);$('banner').textContent='⚠️ 과로 경고 — 회식이나 휴가로 피로도를 낮추세요';$('banner').classList.add('on');setTimeout(()=>{if(!S.event)$('banner').classList.remove('on');},5000);
 }
 const mmss=t=>{t=Math.max(0,Math.ceil(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
 let deptOpen=false;
@@ -921,7 +947,7 @@ function renderDept(){
   if(S.call&&!S.grant)h+='<span class="ok">공고 마감까지 '+mmss(S.call.t)+'</span><br>';
   if(S.grant){const g=GRANTS[S.grant.tier];h+='<span class="ok">'+g.name+' 심사 중… '+mmss(S.grant.t)+' (선정 확률 '+Math.round(grantProb(g)*100)+'%)</span>';}
   else if(!S.call)h+='<span>지금은 공고 기간이 아닙니다 — 다음 학기 시작 시 50초간 열림'+(S.accepted<30?' (조교수 승급 후)':'')+'</span>';
-  else GRANTS.forEach((g,i)=>{const ok=S.accepted>=g.need&&S.money>=g.cost;h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+g.name+' 지원 '+fmt(g.cost)+'<small>논문 '+g.need+'편 이상 · 선정 '+Math.round(grantProb(g)*100)+'% · 선정 시 '+fmt(g.reward)+' + 논문 단가 +'+Math.round(g.bonus*100)+'%</small></button>';});
+  else GRANTS.forEach((g,i)=>{const ok=grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost;h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+(S.won[i]?'✅ ':'')+g.name+' 지원 '+fmt(g.cost)+'<small>'+(grantOk(i)?'':'먼저 '+GRANTS[i-1].name+' 선정 필요 · ')+'논문 '+g.need+'편 이상 · 선정 '+Math.round(grantProb(g)*100)+'% · 선정 시 '+fmt(g.reward)+' + 논문 단가 +'+Math.round(g.bonus*100)+'%</small></button>';});
   h+='</div>';
   h+='<div class="sec"><b>🤝 타대 교수 공동연구</b>'+(S.collabBonus>0?' · 채택률 +'+Math.round(S.collabBonus*100)+'%p':'')+'<br>';
   if(S.collab){const c=COLLABS[S.collab.k];h+='<span class="ok">'+c.name+'와 진행 중… '+mmss(S.collab.t)+'</span>';}
@@ -938,11 +964,11 @@ function renderDept(){
 function deptAction(a,k){
   if(a==='teach'){S.teach=true;toast('📚 강의 담당 시작');}
   else if(a==='sem'){if(S.semCd>0||S.buff||!spend(semCost()))return;S.buff={k,t:40};S.semCd=60;toast(BUFFS[k].icon+' '+BUFFS[k].name+' 개최!');beep(1000,0.15,'triangle',0.05);}
-  else if(a==='dinner'){if(S.dinnerCd>0||!spend(dinnerCost()))return;S.dinnerCd=60;S.wfat=Math.max(0,S.wfat-60);S.grudge=Math.max(0,S.grudge-40);workers.forEach(w=>w.fat=Math.max(0,w.fat-60));S.buff=S.buff||{k:'speed',t:10};toast('🍻 회식! 전원 피로 −60');beep(900,0.15,'triangle',0.05);}
+  else if(a==='dinner'){if(S.dinnerCd>0||!spend(dinnerCost()))return;S.dinnerCd=60;S.wfat=Math.max(0,S.wfat-60);S.grudge=Math.max(0,S.grudge-40);workers.forEach(w=>w.fat=Math.max(0,w.fat-60+rnd(-8,8)));S.buff=S.buff||{k:'speed',t:10};toast('🍻 회식! 전원 피로 −60');beep(900,0.15,'triangle',0.05);}
   else if(a==='vac'){if(S.vacCd>0||S.vacT>0)return;S.vacT=20;S.vacCd=90;toast('🏖️ 연구실 휴가 — 20초간 전원 휴식');}
   else if(a==='bonus'){if(S.bonusCd>0||S.bonusT>0||S.slumpT>0||!spend(bonusCost()))return;S.bonusT=25;S.bonusCd=90;toast('💸 연구수당 지급! 25초간 전원 능률 급상승');beep(1200,0.15,'triangle',0.05);}
   else if(a==='collab'){const c=COLLABS[k];if(S.collab||S.collabCd>0||S.queue<c.data||!spend(c.cost))return;S.queue-=c.data;refreshPiles();S.collab={k,t:c.t};S.collabCd=90;toast('🤝 '+c.name+' 교수에게 데이터 전달 — '+c.t+'초 뒤 결과');}
-  else if(a==='grant'){const g=GRANTS[k];if(!S.call||S.grant||S.accepted<g.need||!spend(g.cost))return;S.grant={tier:+k,t:g.t};toast('📜 '+g.name+' 제안서 제출 — '+g.t+'초 뒤 결과');}
+  else if(a==='grant'){const g=GRANTS[k];if(!S.call||S.grant||!grantOk(+k)||S.accepted<g.need||!spend(g.cost))return;S.grant={tier:+k,t:g.t};toast('📜 '+g.name+' 제안서 제출 — '+g.t+'초 뒤 결과');}
   save();renderDept();
 }
 $('deptBody').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;deptAction(b.dataset.a,b.dataset.k);});
@@ -982,7 +1008,7 @@ armButton($('btnQuit'),()=>{$('menuBox').classList.add('hidden');gameOver('quit'
 $('btnFinalContinue').addEventListener('click',()=>{$('finalBox').classList.add('hidden');S.running=true;last=performance.now();});
 armButton($('btnFinalSabb'),doSabbatical);
 $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hidden');S.running=true;last=performance.now();});
-function doSabbatical(){recordRun('안식년');NOSAVE=true;try{localStorage.setItem('lab_save',JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}location.reload();}
+function doSabbatical(){recordRun('안식년');NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}location.reload();}
 armButton($('btnSabb'),doSabbatical);
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
@@ -990,28 +1016,32 @@ window.addEventListener('pagehide',save);window.addEventListener('beforeunload',
 // two-tap confirm (window.confirm is blocked inside the artifact frame)
 function armButton(btn,fn){let armed=false,h=null;const orig=btn.textContent;btn.addEventListener('click',()=>{if(!armed){armed=true;btn.textContent='정말요? 3초 안에 한 번 더 탭';h=setTimeout(()=>{armed=false;btn.textContent=orig;},3000);return;}clearTimeout(h);btn.textContent=orig;armed=false;fn();});}
 // export / import save code
-function exportCode(){save();try{return btoa(unescape(encodeURIComponent(localStorage.getItem('lab_save')||'')));}catch(e){return '';}}
-function importCode(code){try{const j=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));if(!j||typeof j.accepted!=='number')throw 0;localStorage.setItem('lab_save',JSON.stringify(j));return true;}catch(e){return false;}}
+function exportCode(){save();try{return btoa(unescape(encodeURIComponent(localStorage.getItem(SAVE_KEY())||'')));}catch(e){return '';}}
+function importCode(code){try{const j=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));if(!j||typeof j.accepted!=='number')throw 0;localStorage.setItem(SAVE_KEY(),JSON.stringify(j));return true;}catch(e){return false;}}
 /* ---------------- loop ---------------- */
 let last=performance.now();
 function loop(now){const dt=Math.min(0.05,(now-last)/1000)*0.8*SET.spd;last=now;if(S.running)update(dt);renderer.render(scene,camera);requestAnimationFrame(loop);}
 
+function chooseMode(m){if(m!==MODE){NOSAVE=true;try{localStorage.setItem('lab_mode',m);}catch(e){}location.reload();return;}start();}
 function start(){const raw=($('labName').value||'').trim();const code=raw.toLowerCase();const cheat=code==='developer-ending'?'final':code==='developer-nobel'?'nobel':code==='developer-nature'?'nature':code==='developer-status'?'status':null;
   if(!cheat&&raw)S.labName=raw;if(!S.labName)S.labName='우리 연구실';$('labName').value=S.labName;save();S.running=true;
   if(cheat==='status'){S.running=false;showStatus();return;}
   if(cheat==='final')setTimeout(showFinal,300);else if(cheat==='nobel')setTimeout(showEnding,300);else if(cheat==='nature')setTimeout(()=>startParty('nature'),300);$('start').classList.add('hidden');bgmStart();beep(660,0.1,'triangle',0.04);}
-$('btnStart').addEventListener('click',start);
+$('btnStart').addEventListener('click',()=>chooseMode('hard'));$('btnEasy').addEventListener('click',()=>chooseMode('easy'));
+$('btnSaveClose').addEventListener('click',()=>{save();toast('💾 저장됨 — 이제 창을 닫아도 됩니다');$('menuBox').classList.add('hidden');S.running=true;last=performance.now();});
+if(/Instagram|FBAN|FBAV|KAKAOTALK|NAVER\(|Line\//i.test(navigator.userAgent||''))$('inappNote').style.display='block';
+$('modeNote').textContent=EASY()?'현재: 🌱 이지 모드 — 재난·신맵·랭킹 없이 연습':'현재: 🔥 헬조선 모드 — 정전·화재·물난리 · 신맵 · 랭킹 등록';
 $('mute').addEventListener('click',()=>{audio();setMute(!muted);});
 $('menu').addEventListener('click',()=>{S.running=false;$('volRange').value=SET.vol;$('volLab').textContent=Math.round(SET.vol*100)+'%';$('spdRange').value=SET.spd;$('spdLab').textContent=SET.spd.toFixed(1)+'x';$('saveMsg').textContent=lastSaved?'마지막 저장 '+lastSaved.toLocaleTimeString():'';$('menuStats').innerHTML='논문 '+S.accepted+'편 · 리젝 '+S.rejected+'회 · 채택률 '+Math.round(acceptRate()*100)+'%<br>학생 '+students()+'명 · 리뷰어 '+reviewers()+'명 · 가방 '+cap()+' · 몽둥이 '+dmg()+'<br>석사생 '+S.lv.ms+'명 · 박사생 '+S.lv.phd+'명 · 포닥 '+S.lv.pd+'명<br>🌟 네이처(자매지 포함) 게재 '+S.natures+'회';$('menuBox').classList.remove('hidden');});
 $('btnResume').addEventListener('click',()=>{$('menuBox').classList.add('hidden');S.running=true;last=performance.now();});
-armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem('lab_save');}catch(e){}location.reload();});
+armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem(SAVE_KEY());}catch(e){}location.reload();});
 $('volRange').addEventListener('input',e=>{SET.vol=+e.target.value;$('volLab').textContent=Math.round(SET.vol*100)+'%';if(MASTER&&!muted)MASTER.gain.setTargetAtTime(SET.vol,AC.currentTime,0.05);saveSettings();});
 $('spdRange').addEventListener('input',e=>{SET.spd=+e.target.value;$('spdLab').textContent=SET.spd.toFixed(1)+'x';saveSettings();});
 $('btnExport').addEventListener('click',()=>{const code=exportCode();$('saveCode').value=code;$('saveCode').select();let ok=false;try{document.execCommand('copy');ok=true;}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>{$('saveMsg').textContent='복사됨 — 메모에 붙여넣어 보관하세요';}).catch(()=>{$('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});else $('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});
-armButton($('btnImport'),()=>{if(importCode($('saveCode').value)){$('saveMsg').textContent='불러오는 중…';location.reload();}else $('saveMsg').textContent='코드가 올바르지 않습니다';});
+armButton($('btnImport'),()=>{if(importCode($('saveCode').value)){NOSAVE=true;$('saveMsg').textContent='불러오는 중…';location.reload();}else $('saveMsg').textContent='코드가 올바르지 않습니다';});
 
 $('verNote').textContent='v'+VERSION;logVisit();$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}location.reload();});
-if(load()){$('labName').value=S.labName||'';$('saveNote').textContent='저장된 진행 상황을 불러왔습니다 — 논문 '+S.accepted+'편 · '+fmt(S.money);}
+if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[이지] ':'[헬조선] ')+'저장된 진행 상황을 불러왔습니다 — 논문 '+S.accepted+'편 · '+fmt(S.money);}
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
 for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');if(S.lv.admin>0)spawnAdmin();
 camera.position.set(0,21,19.5);camera.lookAt(0,0.5,1.5);
@@ -1048,7 +1078,9 @@ requestAnimationFrame(loop);
     </div>
     <p class="sub">Payroll is due every semester and overworked researchers quit. Rejected papers must be rewritten, broken equipment recovers in 15s, and you need coffee when stamina runs out. Manage teaching, seminars and grants in 🏛 (top right).</p>
     <input id="labName" class="labname" maxlength="20" placeholder="Lab name (e.g. AI Photonics Lab)">
-    <button class="btn" id="btnStart">Clock in</button>
+    <div class="row" style="width:min(88vw,360px);gap:10px;margin-top:14px"><button class="bigact" id="btnEasy" style="background:#2ecc71;color:#062"><span class="ico">🌱</span>Easy Mode<small style="font-weight:600;opacity:.85">practice · no ranking</small></button><button class="bigact" id="btnStart" style="background:#ff5a5a"><span class="ico">🔥</span>Hell Mode<small style="font-weight:600;opacity:.85">disasters · new maps · ranking</small></button></div>
+    <p class="sub" id="modeNote"></p>
+    <p class="sub" id="inappNote" style="display:none;color:#ffd23d">📵 Saves may not persist in the Instagram in-app browser. Tap ··· (top right) → "Open in browser".</p>
     <button class="btn ghost" id="btnRankStart">🏆 Rankings</button>
     <p class="sub" id="verNote"></p>
     <p class="sub"><a href="#" id="langToggle" style="color:#fff">🇰🇷 한국어</a></p>
@@ -1100,7 +1132,7 @@ requestAnimationFrame(loop);
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">Take a sabbatical (restart · +25% income forever)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.0.1</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.1</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ Settings</b><br>
@@ -1113,7 +1145,7 @@ requestAnimationFrame(loop);
         <div class="row"><button class="act" id="btnExport">Copy save code</button><button class="act" id="btnImport" style="background:#22c55e">Load from code</button></div>
       </div>
     </div>
-    <div class="row bigrow"><button class="bigact" id="btnRank" style="background:#ffc83d;color:#2a1a00"><span class="ico">🏆</span>Rankings</button><button class="bigact" id="btnQuit" style="background:#ff5a5a"><span class="ico">💣</span>Blow up lab</button></div>
+    <div class="row bigrow"><button class="bigact" id="btnRank" style="background:#ffc83d;color:#2a1a00"><span class="ico">🏆</span>Rankings</button><button class="bigact" id="btnSaveClose" style="background:#3d7bff"><span class="ico">💾</span>Save & leave</button><button class="bigact" id="btnQuit" style="background:#ff5a5a"><span class="ico">💣</span>Blow up lab<small style="font-weight:600;opacity:.85">submit record & reset</small></button></div>
     <button class="btn" id="btnResume">Resume</button>
     <button class="btn" id="btnReset" style="background:#ff6b6b;box-shadow:0 6px 0 #b03a3a;color:#fff;margin-top:10px">Start over</button>
   </div>
@@ -1125,12 +1157,14 @@ if(!window.THREE){document.getElementById('saveNote').textContent='Could not loa
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.0.1';const LANG='en';
+const VERSION='2.1.1';const LANG='en';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
 let AC=null,MASTER=null,muted=false;
 const SET={vol:1,spd:1};
+let MODE='hard';try{MODE=localStorage.getItem('lab_mode')==='easy'?'easy':'hard';if(!localStorage.getItem('lab_save_hard')&&localStorage.getItem('lab_save_en')){localStorage.setItem('lab_save_hard',localStorage.getItem('lab_save_en'));}}catch(e){}
+const SAVE_KEY=()=>'lab_save_'+MODE;const EASY=()=>MODE==='easy';
 try{muted=localStorage.getItem('lab_mute_en')==='1';const j=JSON.parse(localStorage.getItem('lab_settings_en')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);}}catch(e){}
 function saveSettings(){try{localStorage.setItem('lab_settings_en',JSON.stringify(SET));}catch(e){}}
 function audio(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=muted?0:SET.vol;MASTER.connect(AC.destination);}catch(e){}return AC;}
@@ -1162,7 +1196,7 @@ const TITLES=[[0,'Undergrad RA'],[2,'MS Student'],[5,'PhD Student'],[10,'Postdoc
 const S={running:false,money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,
   data:0,drafts:0,queue:0,pile:0,rev:0,wings:[true,false,false,false,false],
   stamina:100,coffeeT:0,event:null,eventT:60,t:0,lastSwing:-9,
-  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,fire:null,blackout:0,wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
+  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,fire:null,blackout:0,flood:0,quitCd:0,won:[false,false,false,false],wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
 window.__S=S;
 const cap=()=>10+3*S.lv.bag, students=()=>Math.max(0,1+S.lv.student), reviewers=()=>1+S.lv.reviewer, dmg=()=>2+S.lv.club;
 const writeTime=()=>6.5*Math.pow(0.85,S.lv.write)*effWrite();
@@ -1170,13 +1204,13 @@ const acceptRate=()=>clamp(0.35+0.08*S.lv.reviewer+0.02*S.lv.write+S.collabBonus
 const effWrite=()=>(S.labCoffee>0?0.6:1)*(S.bonusT>0?0.5:S.slumpT>0?1.4:1);
 const effSpeed=()=>(S.labCoffee>0?1.4:1)*(S.bonusT>0?1.5:S.slumpT>0?0.8:1);
 const dropMult=()=>S.buff&&S.buff.k==='data'?1.5:1;
-const speedMult=()=>(S.buff&&S.buff.k==='speed'?1.3:1)*(S.teach?0.85:1);
+const speedMult=()=>(S.buff&&S.buff.k==='speed'?1.3:1)*(S.teach?0.85:1)*(S.flood>0?0.45:1);
 const paperValue=()=>Math.round((6000+S.accepted*150)*(S.event&&S.event.k==='conf'?2:S.event&&S.event.k==='cut'?0.7:S.event&&S.event.k==='raise'?1.3:1)*(1+S.grantBonus)*(1+0.02*S.alumni)*(1+0.25*S.sabb));
 function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t=n;return t;}
 let lastSaved=null;
 let NOSAVE=false;
-function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem('lab_save_en',JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem('lab_save_en')||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
+function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
+function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,!!j.leader,!!j.national];if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
 
 /* ---------------- three setup ---------------- */
 const cv=$('c');
@@ -1312,18 +1346,18 @@ WINGS.forEach((w,wi)=>{
   }else if(w.gate){
     w.wall=box(0.6,2.4,52,w.gate.national?0x2b3340:0x9fb7cc,w.gate.x,1.2,-13);scene.add(w.wall);
     const stripe=box(0.62,0.25,52,w.gate.national?0x4fb3ff:0xffc83d,0,0.8,0);w.wall.add(stripe);
-    if(!w.gate.national)w.zone=addZone({kind:'gate',wing:wi,x:w.gate.x-w.gate.side*2.2,z:-9,r:1.7,color:0xffc83d,y:1.8});
+    if(!w.gate.national&&!EASY())w.zone=addZone({kind:'gate',wing:wi,x:w.gate.x-w.gate.side*2.2,z:-9,r:1.7,color:0xffc83d,y:1.8});
     if(S.wings[wi]){w.wall.visible=false;}
   }
 });
 function applyWings(){WINGS.forEach((w,i)=>{if(w.wall&&!w.sinking)w.wall.visible=!S.wings[i];if(w.hidden&&S.wings[i])instruments.forEach(ins=>{if(ins.wing===i&&!ins.g.visible){ins.g.visible=true;ins.appear=1;}});});}
 
 /* ---------------- hired workers (MS students / PhD student) ---------------- */
-const workers=[];
+const workers=[];window.__W=workers;
 function spawnWorker(kind){
   const c=makeChar(kind==='ms'?0x2bb5a0:kind==='phd'?0xe0a020:0xf2f2f2,kind==='pd'?1.0:0.9,{hair:kind==='ms'?0x222:kind==='phd'?0x4a2a10:0x777,glasses:kind!=='ms'});
   const sg=new THREE.Group();sg.position.set(0,1.15,-0.38);c.g.add(sg);const st=[];for(let i=0;i<(kind==='pd'?12:6);i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.07,0.7),kind==='ms'?paperMatW:paperMatY);m.position.y=i*0.08;m.visible=false;sg.add(m);st.push(m);}
-  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:420,fat:0};
+  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:420,fat:rnd(0,30),fatRate:rnd(0.75,1.25)};
   w.el=document.createElement('div');w.el.className='lab3d no';w.el.style.display='none';$('labels').appendChild(w.el);
   c.g.position.set(kind==='phd'?-12:-4+workers.length,0,5);scene.add(c.g);workers.push(w);
 }
@@ -1347,9 +1381,13 @@ function updateWorkers(dt){
     if(S.fire){const f=S.fire.ins;const d=Math.hypot(f.x-p.x,f.z-p.z);if(d>2.6)moveTo(w,f.x,f.z,dt,4.5);else{w.g.rotation.y=Math.atan2(f.x-p.x,f.z-p.z);w.ch.ra.rotation.x=-1.3+Math.sin(S.t*25)*0.2;}w.el.style.display='none';continue;}
     if(S.blackout>0){w.ch.la.rotation.x=0;w.ch.ra.rotation.x=0;w.el.style.display='none';continue;}
     if(S.vacT>0){w.fat=Math.max(0,w.fat-10*dt);w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;p.y=Math.abs(Math.sin(S.t*3+w.ph))*0.05;w.el.style.display='none';continue;}
-    w.fat=Math.min(100,w.fat+0.4*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
+    w.fat=Math.min(100,w.fat+0.4*(w.fatRate||1)*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
+    if(S.quitCd>0&&w.fat>=99&&!EASY())w.fat=99;
     if(w.fat>=80&&!w.warned){w.warned=true;toast('😫 '+(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc')+' fatigue 80% — lab dinner or vacation in 🏛');}if(w.fat<60)w.warned=false;
-    if(w.fat>=100){scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc');save();continue;}
+    if(w.fat>=100&&EASY()){w.fat=0;w.rest=20;toast('😴 '+(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc')+' is exhausted — resting 20s');continue;}
+    if(w.rest>0){w.rest-=dt;w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;w.el.style.display='none';continue;}
+    if(w.fat>=100&&S.quitCd>0)w.fat=99;
+    if(w.fat>=100){S.quitCd=20;scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc');save();continue;}
     if(w.fat>=70){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' fatigue '+Math.round(w.fat)+'%';projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
     if(w.kind==='ms'||w.kind==='pd'){
       if(w.state==='seek'){
@@ -1419,6 +1457,18 @@ function updateFire(dt){
   if(f.spreadT<=0){f.spreadT=14;const cand=instruments.filter(x=>!x.broken&&x!==f.ins&&S.wings[x.wing]&&x.g.visible);if(cand.length){const v=cand[ri(0,cand.length-1)];v.hp=0;v.broken=true;v.repairT=30;pop(v.x,2.4,v.z,'🔥 Fire spread!','#ff5f6d');}}
   if(f.t>45){endFire(false);return;}
   $('banner').textContent='🔥 Extinguishing '+Math.round(100-f.hp)+'% — stand next to it to spray ('+workers.length+' helping)';$('banner').classList.add('on');
+}
+/* ---------------- flood ---------------- */
+const floodMesh=new THREE.Mesh(new THREE.PlaneGeometry(64,52,1,1),new THREE.MeshBasicMaterial({color:0x3b8bd6,transparent:true,opacity:0.5}));floodMesh.rotation.x=-Math.PI/2;floodMesh.position.set(0,-0.6,-13);floodMesh.visible=false;scene.add(floodMesh);
+function startFlood(){
+  S.flood=20;floodMesh.visible=true;
+  const cand=instruments.filter(x=>!x.broken&&S.wings[x.wing]&&x.g.visible);for(let i=0;i<2&&cand.length;i++){const v=cand.splice(ri(0,cand.length-1),1)[0];v.hp=0;v.broken=true;v.repairT=30;pop(v.x,2.4,v.z,'🌊 Flooded!','#4fb3ff');}
+  S.event={k:'flood',t:20,msg:'🌊 Flood! Movement slowed · equipment flooded'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');beep(150,0.7,'sine',0.07);
+}
+function updateFlood(dt){
+  if(S.flood>0){S.flood-=dt;floodMesh.position.y=Math.min(0.32,floodMesh.position.y+dt*0.4)+Math.sin(S.t*3)*0.02;floodMesh.material.opacity=0.45+Math.sin(S.t*2)*0.05;
+    if(S.flood<=0){toast('🌊 The water is gone');}}
+  else if(floodMesh.visible){floodMesh.position.y-=dt*0.5;if(floodMesh.position.y<-0.6)floodMesh.visible=false;}
 }
 /* ---------------- blackout ---------------- */
 const hemi=scene.children.find(o=>o.isHemisphereLight);
@@ -1580,7 +1630,7 @@ function update(dt){
       else if(r<0.38&&reviewers()>1){S.lv.reviewer--;layoutProfs();toast('🚪 A reviewer quit (reviewers −1)');}
       else pop(pc.g.position.x-1,2.6,pc.g.position.z,['😵 Reviewer 2 avenged','🤕 "minor revision…"','💫 Telling the editor on you'][ri(0,2)],'#ffb340');}
     else if(st){timers.swing=0.6;S.lastSwing=S.t;S.stamina-=5;player.g.rotation.y=Math.PI;st.whip=12;beep(300,0.08,'square',0.05);S.grudge=Math.min(100,S.grudge+12);S.wfat=Math.min(100,S.wfat+8);
-      if(Math.random()<0.03+S.grudge*0.006){S.lv.student--;layoutStudents();if(students()<=0){gameOver('exodus');}else toast('🏃 A student ran away (writers −1) · grudge '+Math.round(S.grudge)+'%');}
+      if(Math.random()<0.03+S.grudge*0.006){S.lv.student--;layoutStudents();if(students()<=0){if(EASY()){S.lv.student=0;layoutStudents();toast('🏃 A student ran away… and came back (easy mode)');}else gameOver('exodus');}else toast('🏃 A student ran away (writers −1) · grudge '+Math.round(S.grudge)+'%');}
       else if(S.grudge>=50&&Math.random()<0.3)pop(st.g.position.x,2.4,st.g.position.z,['😡 I am reporting you to HR','📱 Posting this on Reddit','😤 I am switching labs'][ri(0,2)],'#ff5f6d');
       else pop(st.g.position.x,2.4,st.g.position.z,['😱 Writing faster, boss','⌨️⌨️⌨️','😭 All-nighter','📝 2x speed for 12s'][ri(0,3)],'#ffd23d');}
   }
@@ -1644,7 +1694,7 @@ function update(dt){
 
   // students write
   if(S.vacT>0){S.wfat=Math.max(0,S.wfat-10*dt);}
-  else if(S.queue>0){S.wfat=Math.min(100,S.wfat+0.3*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);if(S.wfat>=80&&!S.wwarned){S.wwarned=true;toast('😫 Writers at 80% fatigue — lab dinner or vacation in 🏛');}if(S.wfat<60)S.wwarned=false;if(S.wfat>=100){S.wfat=55;if(students()>1){S.lv.student--;layoutStudents();}overworkQuit('Writer');save();}}
+  else if(S.queue>0){S.wfat=Math.min(100,S.wfat+0.3*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);if(S.wfat>=80&&!S.wwarned){S.wwarned=true;toast('😫 Writers at 80% fatigue — lab dinner or vacation in 🏛');}if(S.wfat<60)S.wwarned=false;if(S.wfat>=100){if(EASY()){S.wfat=0;toast('😴 The writers are exhausted and taking a short break');S.vacT=Math.max(S.vacT,10);}else{S.wfat=55;if(students()>1){S.lv.student--;layoutStudents();}overworkQuit('Writer');save();}}}
   else S.wfat=Math.max(0,S.wfat-1.5*dt);
   while(timers.write.length<students())timers.write.push(rnd(0,writeTime()));
   timers.write.length=students();
@@ -1703,15 +1753,17 @@ function update(dt){
 
   // semester / teaching
   S.semT-=dt;
-  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 Semester over · teaching pay +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=payroll();S.money-=pay;if(S.money<0){toast('💸 Payroll '+fmt(pay)+' paid — balance negative! Bankrupt if not repaid by next semester');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 End-of-term payroll '+fmt(pay)+' paid');if(S.debtT)S.debtT=0;}
-  if(S.money<0&&S.debtT>=2){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
+  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 Semester over · teaching pay +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0){toast('💸 Payroll '+fmt(pay)+' paid — balance negative! Bankrupt if not repaid by next semester');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 End-of-term payroll '+fmt(pay)+' paid');if(S.debtT)S.debtT=0;}
+  if(S.money<0&&S.debtT>=2&&!EASY()){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
   if(S.accepted>=20){S.call={t:50};toast('📜 Grant call open — apply in 🏛 within 50s');beep(1100,0.15,'square',0.05);}save();}
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 Grant call closed');}}
   if(!S.deptIntro&&S.accepted>=20){S.deptIntro=true;S.call={t:50};save();S.running=false;$('introBox').classList.remove('hidden');}
-  if(S.grudge>0)S.grudge=Math.max(0,S.grudge-0.5*dt);
+  if(S.grudge>0)S.grudge=Math.max(0,S.grudge-0.5*dt);if(S.quitCd>0)S.quitCd-=dt;
   // scheduled disasters: ~5 min fire / ~7 min blackout at 1.0x (game time runs at 0.8x real)
-  if(S.fireT===undefined){S.fireT=rnd(200,280);S.darkT=rnd(290,380);}
-  if(!S.fire&&S.blackout<=0){S.fireT-=dt;S.darkT-=dt;}
+  if(S.fireT===undefined){S.fireT=rnd(200,280);S.darkT=rnd(290,380);S.floodT=rnd(480,600);}
+  if(!EASY()&&!S.fire&&S.blackout<=0&&S.flood<=0){S.fireT-=dt;S.darkT-=dt;S.floodT-=dt;}
+  if(S.floodT<=0){if(S.party>0)S.floodT=15;else{S.floodT=rnd(480,600);startFlood();}}
+  updateFlood(dt);
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 Fire! Everyone grab an extinguisher'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};beep(80,0.8,'sawtooth',0.07);}}
   updateFire(dt);updateBlackout(dt);
@@ -1721,10 +1773,10 @@ function update(dt){
   if(S.bonusT>0){S.bonusT-=dt;if(S.bonusT<=0){S.slumpT=15;toast('😮‍💨 Bonus wore off — 15s burnout');}}else if(S.slumpT>0)S.slumpT-=dt;
   if(S.collabCd>0)S.collabCd-=dt;
   if(S.collab){S.collab.t-=dt;if(S.collab.t<=0){const c=COLLABS[S.collab.k];const v=paperValue()*c.papers;S.accepted+=c.papers;S.money+=v;if(c.acc){S.collabBonus=Math.min(0.05,S.collabBonus+c.acc);}toast('🤝 '+c.name+' collaboration done! Papers +'+c.papers+' · +'+fmt(v)+(c.acc?' · accept +1%p permanent':''));beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);S.collab=null;save();}}
-  if(S.lv.admin>0&&S.call&&!S.grant){S.adminT=(S.adminT||0)+dt;if(S.adminT>3){S.adminT=0;let pick=-1;GRANTS.forEach((g,i)=>{if(S.accepted>=g.need&&S.money>=g.cost)pick=i;});if(pick>=0){const g=GRANTS[pick];spend(g.cost);S.grant={tier:pick,t:g.t};toast('🗂️ Admin staff submitted the '+g.name+' proposal');beep(1000,0.1,'triangle',0.04);}}}
+  if(S.lv.admin>0&&S.call&&!S.grant){S.adminT=(S.adminT||0)+dt;if(S.adminT>3){S.adminT=0;let pick=-1;GRANTS.forEach((g,i)=>{if(grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost)pick=i;});if(pick>=0){const g=GRANTS[pick];spend(g.cost);S.grant={tier:pick,t:g.t};toast('🗂️ Admin staff submitted the '+g.name+' proposal');beep(1000,0.1,'triangle',0.04);}}}
   if(S.buff){S.buff.t-=dt;if(S.buff.t<=0)S.buff=null;}
   if(S.grant){S.grant.t-=dt;if(S.grant.t<=0){const g=GRANTS[S.grant.tier];const pr=grantProb(g);
-    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;if(!S.wings[4]){openWing(WINGS[4],4);}const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 National grant: hired MS '+addMs+' · PhD '+addPhd+' · Data Center opened!'),1800);}toast('🎉 '+g.name+' awarded! +'+fmt(rw)+' · paper value +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
+    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;S.won[S.grant.tier]=true;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;if(!S.wings[4]&&!EASY()){openWing(WINGS[4],4);}const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 National grant: hired MS '+addMs+' · PhD '+addPhd+' · Data Center opened!'),1800);}toast('🎉 '+g.name+' awarded! +'+fmt(rw)+' · paper value +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
     else{toast('😞 '+g.name+' rejected… next time');beep(180,0.3,'sawtooth',0.05);}
     S.grant=null;save();}}
   if(!S.ended&&S.accepted>=70&&S.national&&S.wings[2]){S.ended=true;save();recordRun('Nobel');showEnding();}
@@ -1737,7 +1789,7 @@ function update(dt){
   // HUD
   $('money').textContent=fmt(S.money);
   $('carry').textContent='📄 Data '+S.data+' · 📝 Drafts '+S.drafts+' / '+cap();
-  $('rank').textContent=S.labName+' · '+title()+' · Papers '+S.accepted+' · Rejects '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚Teaching':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸Bonus'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨Burnout'+Math.ceil(S.slumpT)+'s':'');
+  $('rank').textContent=(EASY()?'🌱 ':'')+S.labName+' · '+title()+' · Papers '+S.accepted+' · Rejects '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚Teaching':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸Bonus'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨Burnout'+Math.ceil(S.slumpT)+'s':'');
   const elig=S.call&&!S.grant&&GRANTS.some(g=>S.accepted>=g.need&&S.money>=g.cost);
   $('dept').classList.toggle('blink',!!elig);$('deptArrow').classList.toggle('on',!!elig&&!deptOpen);if(elig)$('deptArrow').textContent='📜 Grant call '+mmss(S.call.t)+' ➜';
   $('stamFill').style.width=S.stamina+'%';$('stamLab').textContent=S.coffeeT>0?'☕ Caffeine '+Math.ceil(S.coffeeT)+'s':(S.stamina<5?'Exhausted — need coffee':'Stamina');
@@ -1749,6 +1801,7 @@ function projectLabel(el,x,y,z){_v.set(x,y,z).project(camera);const w=cv.clientW
 const BUFFS={data:{icon:'🧪',name:'Equipment Seminar',desc:'Data yield +50% for 40s'},accept:{icon:'📝',name:'Writing Seminar',desc:'Accept rate +20%p for 40s'},speed:{icon:'⚡',name:'Lab Workshop',desc:'Everyone moves +30% for 40s'}};
 const GRANTS=[{name:'NSF CAREER',cost:15000,need:3,p:0.45,reward:60000,bonus:0.05,t:25},{name:'NIH R01',cost:60000,need:12,p:0.32,reward:250000,bonus:0.10,t:35},{name:'NIH Pioneer Award',cost:250000,need:30,p:0.22,reward:1200000,bonus:0.20,t:45},{name:'Genesis Mission',cost:800000,need:50,p:0.12,reward:5000000,bonus:0.30,t:60}];
 const grantProb=g=>clamp(g.p+0.02*S.lv.reviewer+0.01*S.alumni,0.05,0.7);
+const grantOk=i=>i===0||S.won[i-1];
 const semCost=()=>Math.round(12000+S.accepted*300);
 const COLLABS={dom:{name:'Domestic university',cost:8000,data:8,t:45,papers:1},intl:{name:'Overseas university',cost:30000,data:15,t:60,papers:2,acc:0.01}};
 const bonusCost=()=>(students()+workers.length)*1500;
@@ -1808,29 +1861,30 @@ function recordRun(end){
   const e={name:S.labName||'Our Lab',papers:S.accepted,alumni:S.alumni,earned:Math.floor(S.earned),natures:S.natures,end,date:new Date().toISOString().slice(0,10)};
   e.score=e.papers*10+e.alumni*50+Math.floor(e.earned/10000)+e.natures*300;
   HOF.push(e);HOF.sort((a,b)=>b.score-a.score);HOF=HOF.slice(0,10);try{localStorage.setItem('lab_hof_en',JSON.stringify(HOF));}catch(err){}
-  submitScore(e);
+  if(!EASY())submitScore(e);
 }
 function hofHtml(){
   if(!HOF.length)return '<small>No records yet — endings, bankruptcy and sabbaticals are recorded</small>';
   return HOF.map((e,i)=>'<div class="hofrow">'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' <b>'+e.name+'</b> <small>'+e.score.toLocaleString()+' pts · Papers '+e.papers+' · Alumni '+e.alumni+' · '+fmt(e.earned)+' · '+e.end+'</small></div>').join('');
 }
-function lockRun(){try{localStorage.setItem('lab_save_en',JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
-function resetRun(){NOSAVE=true;try{localStorage.setItem('lab_save_en',JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}location.reload();}
+function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
+function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}location.reload();}
 function gameOver(kind){
   if(S.gameover)return;S.gameover=kind;S.running=false;lockRun();recordRun(kind==='bankrupt'?'Bankrupt':kind==='overwork'?'Overwork':kind==='exodus'?'Students fled':'Quit');
   const lab=S.labName||'Our Lab';
   $('goTitle').textContent=kind==='bankrupt'?'💸 Bankrupt — lab closed':kind==='overwork'?'😵 Overwork — lab dissolved':kind==='exodus'?'🏃 All students fled — advising rights revoked':'🏁 Lab closed';
   $('goBody').innerHTML=(kind==='exodus'?'<p>'+lab+' has no writers left.<br>The club-wielding professor was disciplined by the department.</p><p class="sub">Hitting students builds grudge and raises the chance they flee. Lab dinners calm them.</p>':kind==='quit'?'<p>'+lab+' closes its doors here.<br>Your record is in the Hall of Fame.</p>':kind==='bankrupt'
     ?'<p>'+lab+' missed payroll two semesters in a row.<br>The students left for other labs and the equipment was seized.</p><p class="sub">Payroll is due every semester. Check the next payroll in 🏛.</p>'
-    :'<p>'+lab+' lost two researchers to overwork.<br>After a labor audit the lab was dissolved.</p><p class="sub">Fatigue is shown in 🏛 and lowered with lab dinners and vacations.</p>')+
+    :'<p>'+lab+' lost four researchers to overwork.<br>Two labor board reports changed nothing, so the lab was dissolved.</p><p class="sub">Fatigue is shown in 🏛 and lowered with lab dinners and vacations.</p>')+
     '<p class="sub">Papers '+S.accepted+' · Alumni '+S.alumni+' · total funding '+fmt(S.earned)+'</p>';
   $('goBox').classList.remove('hidden');
   beep(220,0.5,'sawtooth',0.06);setTimeout(()=>beep(165,0.8,'sawtooth',0.06),300);
 }
 function overworkQuit(who){
   S.overwork++;
-  if(S.overwork>=2){gameOver('overwork');return;}
-  toast('😵 '+who+' left due to overwork! One more and the lab is dissolved');beep(150,0.4,'sawtooth',0.06);$('banner').textContent='⚠️ Overwork warning — lower fatigue with a lab dinner or vacation';$('banner').classList.add('on');setTimeout(()=>{if(!S.event)$('banner').classList.remove('on');},5000);
+  if(S.overwork>=4){gameOver('overwork');return;}
+  if(S.overwork>=2){S.money=Math.floor(S.money*0.5);$('banner').textContent='⚖️ Reported to the labor board — funding cut 50% ('+(S.overwork-1)+'/2) · one more report and the lab is dissolved';$('banner').classList.add('on');setTimeout(()=>{if(!S.event)$('banner').classList.remove('on');},7000);toast('⚖️ Labor board report! Funding halved');beep(120,0.6,'sawtooth',0.07);save();return;}
+  toast('😵 '+who+' left due to overwork! From the second one the labor board gets involved');beep(150,0.4,'sawtooth',0.06);$('banner').textContent='⚠️ Overwork warning — lower fatigue with a lab dinner or vacation';$('banner').classList.add('on');setTimeout(()=>{if(!S.event)$('banner').classList.remove('on');},5000);
 }
 const mmss=t=>{t=Math.max(0,Math.ceil(t));return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');};
 let deptOpen=false;
@@ -1849,7 +1903,7 @@ function renderDept(){
   if(S.call&&!S.grant)h+='<span class="ok">Call closes in '+mmss(S.call.t)+'</span><br>';
   if(S.grant){const g=GRANTS[S.grant.tier];h+='<span class="ok">'+g.name+' under review… '+mmss(S.grant.t)+' (chance '+Math.round(grantProb(g)*100)+'%)</span>';}
   else if(!S.call)h+='<span>No call open now — opens for 50s at the start of next semester'+(S.accepted<30?' (after Assistant Professor)':'')+'</span>';
-  else GRANTS.forEach((g,i)=>{const ok=S.accepted>=g.need&&S.money>=g.cost;h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+g.name+' — apply '+fmt(g.cost)+'<small>Papers '+g.need+'+ papers · chance '+Math.round(grantProb(g)*100)+'% · award '+fmt(g.reward)+' + paper value +'+Math.round(g.bonus*100)+'%</small></button>';});
+  else GRANTS.forEach((g,i)=>{const ok=grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost;h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+(S.won[i]?'✅ ':'')+g.name+' — apply '+fmt(g.cost)+'<small>'+(grantOk(i)?'':'Win '+GRANTS[i-1].name+' first · ')+'Papers '+g.need+'+ papers · chance '+Math.round(grantProb(g)*100)+'% · award '+fmt(g.reward)+' + paper value +'+Math.round(g.bonus*100)+'%</small></button>';});
   h+='</div>';
   h+='<div class="sec"><b>🤝 Collaboration</b>'+(S.collabBonus>0?' · accept +'+Math.round(S.collabBonus*100)+'%p':'')+'<br>';
   if(S.collab){const c=COLLABS[S.collab.k];h+='<span class="ok">'+c.name+' in progress… '+mmss(S.collab.t)+'</span>';}
@@ -1866,11 +1920,11 @@ function renderDept(){
 function deptAction(a,k){
   if(a==='teach'){S.teach=true;toast('📚 Teaching this semester');}
   else if(a==='sem'){if(S.semCd>0||S.buff||!spend(semCost()))return;S.buff={k,t:40};S.semCd=60;toast(BUFFS[k].icon+' '+BUFFS[k].name+' started!');beep(1000,0.15,'triangle',0.05);}
-  else if(a==='dinner'){if(S.dinnerCd>0||!spend(dinnerCost()))return;S.dinnerCd=60;S.wfat=Math.max(0,S.wfat-60);S.grudge=Math.max(0,S.grudge-40);workers.forEach(w=>w.fat=Math.max(0,w.fat-60));S.buff=S.buff||{k:'speed',t:10};toast('🍻 Lab dinner! Fatigue −60 for all');beep(900,0.15,'triangle',0.05);}
+  else if(a==='dinner'){if(S.dinnerCd>0||!spend(dinnerCost()))return;S.dinnerCd=60;S.wfat=Math.max(0,S.wfat-60);S.grudge=Math.max(0,S.grudge-40);workers.forEach(w=>w.fat=Math.max(0,w.fat-60+rnd(-8,8)));S.buff=S.buff||{k:'speed',t:10};toast('🍻 Lab dinner! Fatigue −60 for all');beep(900,0.15,'triangle',0.05);}
   else if(a==='vac'){if(S.vacCd>0||S.vacT>0)return;S.vacT=20;S.vacCd=90;toast('🏖️ Lab vacation — everyone rests for 20s');}
   else if(a==='bonus'){if(S.bonusCd>0||S.bonusT>0||S.slumpT>0||!spend(bonusCost()))return;S.bonusT=25;S.bonusCd=90;toast('💸 Bonus paid! Everyone works much faster for 25s');beep(1200,0.15,'triangle',0.05);}
   else if(a==='collab'){const c=COLLABS[k];if(S.collab||S.collabCd>0||S.queue<c.data||!spend(c.cost))return;S.queue-=c.data;refreshPiles();S.collab={k,t:c.t};S.collabCd=90;toast('🤝 '+c.name+' collaboration started — '+c.t+'s until result');}
-  else if(a==='grant'){const g=GRANTS[k];if(!S.call||S.grant||S.accepted<g.need||!spend(g.cost))return;S.grant={tier:+k,t:g.t};toast('📜 '+g.name+' proposal submitted — '+g.t+'s until result');}
+  else if(a==='grant'){const g=GRANTS[k];if(!S.call||S.grant||!grantOk(+k)||S.accepted<g.need||!spend(g.cost))return;S.grant={tier:+k,t:g.t};toast('📜 '+g.name+' proposal submitted — '+g.t+'s until result');}
   save();renderDept();
 }
 $('deptBody').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;deptAction(b.dataset.a,b.dataset.k);});
@@ -1910,7 +1964,7 @@ armButton($('btnQuit'),()=>{$('menuBox').classList.add('hidden');gameOver('quit'
 $('btnFinalContinue').addEventListener('click',()=>{$('finalBox').classList.add('hidden');S.running=true;last=performance.now();});
 armButton($('btnFinalSabb'),doSabbatical);
 $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hidden');S.running=true;last=performance.now();});
-function doSabbatical(){recordRun('Sabbatical');NOSAVE=true;try{localStorage.setItem('lab_save_en',JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}location.reload();}
+function doSabbatical(){recordRun('Sabbatical');NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}location.reload();}
 armButton($('btnSabb'),doSabbatical);
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
@@ -1918,28 +1972,32 @@ window.addEventListener('pagehide',save);window.addEventListener('beforeunload',
 // two-tap confirm (window.confirm is blocked inside the artifact frame)
 function armButton(btn,fn){let armed=false,h=null;const orig=btn.textContent;btn.addEventListener('click',()=>{if(!armed){armed=true;btn.textContent='Sure? Tap again within 3s';h=setTimeout(()=>{armed=false;btn.textContent=orig;},3000);return;}clearTimeout(h);btn.textContent=orig;armed=false;fn();});}
 // export / import save code
-function exportCode(){save();try{return btoa(unescape(encodeURIComponent(localStorage.getItem('lab_save_en')||'')));}catch(e){return '';}}
-function importCode(code){try{const j=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));if(!j||typeof j.accepted!=='number')throw 0;localStorage.setItem('lab_save_en',JSON.stringify(j));return true;}catch(e){return false;}}
+function exportCode(){save();try{return btoa(unescape(encodeURIComponent(localStorage.getItem(SAVE_KEY())||'')));}catch(e){return '';}}
+function importCode(code){try{const j=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));if(!j||typeof j.accepted!=='number')throw 0;localStorage.setItem(SAVE_KEY(),JSON.stringify(j));return true;}catch(e){return false;}}
 /* ---------------- loop ---------------- */
 let last=performance.now();
 function loop(now){const dt=Math.min(0.05,(now-last)/1000)*0.8*SET.spd;last=now;if(S.running)update(dt);renderer.render(scene,camera);requestAnimationFrame(loop);}
 
+function chooseMode(m){if(m!==MODE){NOSAVE=true;try{localStorage.setItem('lab_mode',m);}catch(e){}location.reload();return;}start();}
 function start(){const raw=($('labName').value||'').trim();const code=raw.toLowerCase();const cheat=code==='developer-ending'?'final':code==='developer-nobel'?'nobel':code==='developer-nature'?'nature':code==='developer-status'?'status':null;
   if(!cheat&&raw)S.labName=raw;if(!S.labName)S.labName='Our Lab';$('labName').value=S.labName;save();S.running=true;
   if(cheat==='status'){S.running=false;showStatus();return;}
   if(cheat==='final')setTimeout(showFinal,300);else if(cheat==='nobel')setTimeout(showEnding,300);else if(cheat==='nature')setTimeout(()=>startParty('nature'),300);$('start').classList.add('hidden');bgmStart();beep(660,0.1,'triangle',0.04);}
-$('btnStart').addEventListener('click',start);
+$('btnStart').addEventListener('click',()=>chooseMode('hard'));$('btnEasy').addEventListener('click',()=>chooseMode('easy'));
+$('btnSaveClose').addEventListener('click',()=>{save();toast('💾 Saved — you can close the window now');$('menuBox').classList.add('hidden');S.running=true;last=performance.now();});
+if(/Instagram|FBAN|FBAV|KAKAOTALK|NAVER\(|Line\//i.test(navigator.userAgent||''))$('inappNote').style.display='block';
+$('modeNote').textContent=EASY()?'Current: 🌱 Easy Mode — practice without disasters, new maps or ranking':'Current: 🔥 Hell Mode — blackouts, fires, floods · new maps · ranking';
 $('mute').addEventListener('click',()=>{audio();setMute(!muted);});
 $('menu').addEventListener('click',()=>{S.running=false;$('volRange').value=SET.vol;$('volLab').textContent=Math.round(SET.vol*100)+'%';$('spdRange').value=SET.spd;$('spdLab').textContent=SET.spd.toFixed(1)+'x';$('saveMsg').textContent=lastSaved?'Last saved '+lastSaved.toLocaleTimeString():'';$('menuStats').innerHTML='Papers '+S.accepted+' · Rejects '+S.rejected+' · accept '+Math.round(acceptRate()*100)+'%<br>Writers '+students()+' · Reviewers '+reviewers()+' · Bag '+cap()+' · Club '+dmg()+'<br>MS students '+S.lv.ms+' · PhD '+S.lv.phd+' · Postdocs '+S.lv.pd+'<br>🌟 Nature (incl. sister journals) '+S.natures+'';$('menuBox').classList.remove('hidden');});
 $('btnResume').addEventListener('click',()=>{$('menuBox').classList.add('hidden');S.running=true;last=performance.now();});
-armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem('lab_save_en');}catch(e){}location.reload();});
+armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem(SAVE_KEY());}catch(e){}location.reload();});
 $('volRange').addEventListener('input',e=>{SET.vol=+e.target.value;$('volLab').textContent=Math.round(SET.vol*100)+'%';if(MASTER&&!muted)MASTER.gain.setTargetAtTime(SET.vol,AC.currentTime,0.05);saveSettings();});
 $('spdRange').addEventListener('input',e=>{SET.spd=+e.target.value;$('spdLab').textContent=SET.spd.toFixed(1)+'x';saveSettings();});
 $('btnExport').addEventListener('click',()=>{const code=exportCode();$('saveCode').value=code;$('saveCode').select();let ok=false;try{document.execCommand('copy');ok=true;}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>{$('saveMsg').textContent='Copied — paste it somewhere safe';}).catch(()=>{$('saveMsg').textContent=ok?'Copied':'Long-press the code below to copy';});else $('saveMsg').textContent=ok?'Copied':'Long-press the code below to copy';});
-armButton($('btnImport'),()=>{if(importCode($('saveCode').value)){$('saveMsg').textContent='Loading…';location.reload();}else $('saveMsg').textContent='Invalid code';});
+armButton($('btnImport'),()=>{if(importCode($('saveCode').value)){NOSAVE=true;$('saveMsg').textContent='Loading…';location.reload();}else $('saveMsg').textContent='Invalid code';});
 
 $('verNote').textContent='v'+VERSION;logVisit();$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}location.reload();});
-if(load()){$('labName').value=S.labName||'';$('saveNote').textContent='Saved progress loaded — Papers '+S.accepted+' · '+fmt(S.money);}
+if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[Easy] ':'[Hell] ')+'Saved progress loaded — Papers '+S.accepted+' · '+fmt(S.money);}
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
 for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');if(S.lv.admin>0)spawnAdmin();
 camera.position.set(0,21,19.5);camera.lookAt(0,0.5,1.5);
