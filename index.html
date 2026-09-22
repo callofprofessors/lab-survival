@@ -173,10 +173,10 @@ canvas{display:block;width:100%;height:100%}
     <p>정교수 승진 · 국가전략과제 선정 · 랩 완전 확장. 살아남았습니다.</p>
     <p class="sub" id="endStats"></p>
     <button class="btn" id="btnEndContinue">계속 운영하기</button>
-    <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">안식년 떠나기 (처음부터 · 수익 +25% 영구)</button>
+    <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">안식년 떠나기 (랩 초기화 · 수익 +25% 영구)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.1</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.2</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
@@ -185,7 +185,7 @@ canvas{display:block;width:100%;height:100%}
       </div>
       <div class="sec"><b>💾 저장</b> <small id="saveMsg"></small><br>
         <small>자동 저장은 이 기기·이 브라우저에만 남습니다. 다른 기기로 옮기려면 저장 코드를 복사해 두세요.</small>
-        <textarea id="saveCode" rows="2" placeholder="저장 코드" spellcheck="false"></textarea>
+        <textarea id="saveCode" rows="2" placeholder="저장 코드 (또는 developer- 명령)" spellcheck="false"></textarea>
         <div class="row"><button class="act" id="btnExport">저장 코드 복사</button><button class="act" id="btnImport" style="background:#22c55e">코드로 불러오기</button></div>
       </div>
     </div>
@@ -201,7 +201,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.1.1';const LANG='ko';
+const VERSION='2.1.2';const LANG='ko';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -254,7 +254,7 @@ function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t
 let lastSaved=null;
 let NOSAVE=false;
 function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,!!j.leader,!!j.national];if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
+function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,false,false];const gb=j.grantBonus||0;if(gb>=0.05)S.won[0]=true;if(gb>=0.15)S.won[1]=true;if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=true;if(S.won[1])S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
 
 /* ---------------- three setup ---------------- */
 const cv=$('c');
@@ -911,6 +911,7 @@ function hofHtml(){
   if(!HOF.length)return '<small>아직 기록 없음 — 엔딩·파산·안식년 시점의 성적이 기록됩니다</small>';
   return HOF.map((e,i)=>'<div class="hofrow">'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' <b>'+e.name+'</b> <small>'+e.score.toLocaleString()+'점 · 논문 '+e.papers+' · 졸업생 '+e.alumni+' · '+fmt(e.earned)+' · '+e.end+'</small></div>').join('');
 }
+function hardReload(){try{location.replace(location.pathname+location.search);}catch(e){location.reload();}}
 function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
 function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}location.reload();}
 function gameOver(kind){
@@ -947,7 +948,7 @@ function renderDept(){
   if(S.call&&!S.grant)h+='<span class="ok">공고 마감까지 '+mmss(S.call.t)+'</span><br>';
   if(S.grant){const g=GRANTS[S.grant.tier];h+='<span class="ok">'+g.name+' 심사 중… '+mmss(S.grant.t)+' (선정 확률 '+Math.round(grantProb(g)*100)+'%)</span>';}
   else if(!S.call)h+='<span>지금은 공고 기간이 아닙니다 — 다음 학기 시작 시 50초간 열림'+(S.accepted<30?' (조교수 승급 후)':'')+'</span>';
-  else GRANTS.forEach((g,i)=>{const ok=grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost;h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+(S.won[i]?'✅ ':'')+g.name+' 지원 '+fmt(g.cost)+'<small>'+(grantOk(i)?'':'먼저 '+GRANTS[i-1].name+' 선정 필요 · ')+'논문 '+g.need+'편 이상 · 선정 '+Math.round(grantProb(g)*100)+'% · 선정 시 '+fmt(g.reward)+' + 논문 단가 +'+Math.round(g.bonus*100)+'%</small></button>';});
+  else GRANTS.forEach((g,i)=>{const ok=grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost;const why=!grantOk(i)?'먼저 '+GRANTS[i-1].name+' 선정 필요 · ':S.accepted<g.need?'논문 '+(g.need-S.accepted)+'편 부족 · ':S.money<g.cost?'지원비 부족 · ':'';h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+(S.won[i]?'✅ ':'')+g.name+' 지원 '+fmt(g.cost)+'<small>'+why+'논문 '+g.need+'편 이상 · 선정 '+Math.round(grantProb(g)*100)+'% · 선정 시 '+fmt(g.reward)+' + 논문 단가 +'+Math.round(g.bonus*100)+'%</small></button>';});
   h+='</div>';
   h+='<div class="sec"><b>🤝 타대 교수 공동연구</b>'+(S.collabBonus>0?' · 채택률 +'+Math.round(S.collabBonus*100)+'%p':'')+'<br>';
   if(S.collab){const c=COLLABS[S.collab.k];h+='<span class="ok">'+c.name+'와 진행 중… '+mmss(S.collab.t)+'</span>';}
@@ -1008,7 +1009,7 @@ armButton($('btnQuit'),()=>{$('menuBox').classList.add('hidden');gameOver('quit'
 $('btnFinalContinue').addEventListener('click',()=>{$('finalBox').classList.add('hidden');S.running=true;last=performance.now();});
 armButton($('btnFinalSabb'),doSabbatical);
 $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hidden');S.running=true;last=performance.now();});
-function doSabbatical(){recordRun('안식년');NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}location.reload();}
+function doSabbatical(){recordRun('안식년');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}hardReload();}
 armButton($('btnSabb'),doSabbatical);
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
@@ -1038,9 +1039,25 @@ armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem(SAVE_KEY())
 $('volRange').addEventListener('input',e=>{SET.vol=+e.target.value;$('volLab').textContent=Math.round(SET.vol*100)+'%';if(MASTER&&!muted)MASTER.gain.setTargetAtTime(SET.vol,AC.currentTime,0.05);saveSettings();});
 $('spdRange').addEventListener('input',e=>{SET.spd=+e.target.value;$('spdLab').textContent=SET.spd.toFixed(1)+'x';saveSettings();});
 $('btnExport').addEventListener('click',()=>{const code=exportCode();$('saveCode').value=code;$('saveCode').select();let ok=false;try{document.execCommand('copy');ok=true;}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>{$('saveMsg').textContent='복사됨 — 메모에 붙여넣어 보관하세요';}).catch(()=>{$('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});else $('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});
-armButton($('btnImport'),()=>{if(importCode($('saveCode').value)){NOSAVE=true;$('saveMsg').textContent='불러오는 중…';location.reload();}else $('saveMsg').textContent='코드가 올바르지 않습니다';});
+function devCommand(c){
+  c=c.trim().toLowerCase();if(!c.startsWith('developer-'))return false;
+  const k=c.slice(10);$('menuBox').classList.add('hidden');S.running=true;last=performance.now();
+  if(k==='nature')startParty('nature');else if(k==='sister')startParty('sister');
+  else if(k==='fire'){if(!S.fire)startFire();}
+  else if(k==='dark'||k==='blackout'){S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};}
+  else if(k==='flood')startFlood();
+  else if(k==='ending')showFinal();else if(k==='nobel')showEnding();else if(k==='status'){S.running=false;showStatus();}
+  else if(k==='money'){S.money+=1000000;toast('💰 +$1M');}
+  else if(k==='papers'){S.accepted+=10;toast('📄 논문 +10');}
+  else if(k==='call'){S.call={t:50};toast('📜 공고 강제 개시');}
+  else if(k==='open'){[1,2,3,4].forEach(i=>{if(!S.wings[i])openWing(WINGS[i],i);});}
+  else if(k==='hire'){['ms','ms','phd','pd'].forEach(x=>{S.lv[x]++;spawnWorker(x);});S.lv.admin=1;spawnAdmin();}
+  else{toast('❓ 알 수 없는 개발자 명령: '+k);return true;}
+  toast('🛠 '+c);return true;
+}
+armButton($('btnImport'),()=>{if(devCommand($('saveCode').value)){$('saveCode').value='';return;}if(importCode($('saveCode').value)){NOSAVE=true;$('saveMsg').textContent='불러오는 중…';location.reload();}else $('saveMsg').textContent='코드가 올바르지 않습니다';});
 
-$('verNote').textContent='v'+VERSION;logVisit();$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}location.reload();});
+$('verNote').textContent='v'+VERSION;logVisit();try{const fl=localStorage.getItem('lab_flash');if(fl==='sabb'){localStorage.removeItem('lab_flash');$('saveNote').textContent='🏝️ 안식년에서 복귀 — 새 연구실 시작 · 수익 +'+(S.sabb*25)+'% · 졸업생 보너스 유지';}}catch(e){}$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}location.reload();});
 if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[이지] ':'[헬조선] ')+'저장된 진행 상황을 불러왔습니다 — 논문 '+S.accepted+'편 · '+fmt(S.money);}
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
 for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');if(S.lv.admin>0)spawnAdmin();
@@ -1129,10 +1146,10 @@ requestAnimationFrame(loop);
     <p>Full Professor · National grant · all labs unlocked. You survived.</p>
     <p class="sub" id="endStats"></p>
     <button class="btn" id="btnEndContinue">Keep running the lab</button>
-    <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">Take a sabbatical (restart · +25% income forever)</button>
+    <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">Take a sabbatical (reset lab · +25% income forever)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.1</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.2</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ Settings</b><br>
@@ -1141,7 +1158,7 @@ requestAnimationFrame(loop);
       </div>
       <div class="sec"><b>💾 Save</b> <small id="saveMsg"></small><br>
         <small>Autosave stays on this device and browser. Copy the save code to move to another device.</small>
-        <textarea id="saveCode" rows="2" placeholder="Save code" spellcheck="false"></textarea>
+        <textarea id="saveCode" rows="2" placeholder="Save code (or a developer- command)" spellcheck="false"></textarea>
         <div class="row"><button class="act" id="btnExport">Copy save code</button><button class="act" id="btnImport" style="background:#22c55e">Load from code</button></div>
       </div>
     </div>
@@ -1157,7 +1174,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='Could not loa
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.1.1';const LANG='en';
+const VERSION='2.1.2';const LANG='en';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -1210,7 +1227,7 @@ function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t
 let lastSaved=null;
 let NOSAVE=false;
 function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,!!j.leader,!!j.national];if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
+function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,false,false];const gb=j.grantBonus||0;if(gb>=0.05)S.won[0]=true;if(gb>=0.15)S.won[1]=true;if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=true;if(S.won[1])S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
 
 /* ---------------- three setup ---------------- */
 const cv=$('c');
@@ -1867,6 +1884,7 @@ function hofHtml(){
   if(!HOF.length)return '<small>No records yet — endings, bankruptcy and sabbaticals are recorded</small>';
   return HOF.map((e,i)=>'<div class="hofrow">'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' <b>'+e.name+'</b> <small>'+e.score.toLocaleString()+' pts · Papers '+e.papers+' · Alumni '+e.alumni+' · '+fmt(e.earned)+' · '+e.end+'</small></div>').join('');
 }
+function hardReload(){try{location.replace(location.pathname+location.search);}catch(e){location.reload();}}
 function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
 function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}location.reload();}
 function gameOver(kind){
@@ -1903,7 +1921,7 @@ function renderDept(){
   if(S.call&&!S.grant)h+='<span class="ok">Call closes in '+mmss(S.call.t)+'</span><br>';
   if(S.grant){const g=GRANTS[S.grant.tier];h+='<span class="ok">'+g.name+' under review… '+mmss(S.grant.t)+' (chance '+Math.round(grantProb(g)*100)+'%)</span>';}
   else if(!S.call)h+='<span>No call open now — opens for 50s at the start of next semester'+(S.accepted<30?' (after Assistant Professor)':'')+'</span>';
-  else GRANTS.forEach((g,i)=>{const ok=grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost;h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+(S.won[i]?'✅ ':'')+g.name+' — apply '+fmt(g.cost)+'<small>'+(grantOk(i)?'':'Win '+GRANTS[i-1].name+' first · ')+'Papers '+g.need+'+ papers · chance '+Math.round(grantProb(g)*100)+'% · award '+fmt(g.reward)+' + paper value +'+Math.round(g.bonus*100)+'%</small></button>';});
+  else GRANTS.forEach((g,i)=>{const ok=grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost;const why=!grantOk(i)?'Win '+GRANTS[i-1].name+' first · ':S.accepted<g.need?'Papers '+(g.need-S.accepted)+' more papers needed · ':S.money<g.cost?'not enough funds · ':'';h+='<button class="act" data-a="grant" data-k="'+i+'"'+(ok?'':' disabled')+'>'+(S.won[i]?'✅ ':'')+g.name+' — apply '+fmt(g.cost)+'<small>'+why+'Papers '+g.need+'+ papers · chance '+Math.round(grantProb(g)*100)+'% · award '+fmt(g.reward)+' + paper value +'+Math.round(g.bonus*100)+'%</small></button>';});
   h+='</div>';
   h+='<div class="sec"><b>🤝 Collaboration</b>'+(S.collabBonus>0?' · accept +'+Math.round(S.collabBonus*100)+'%p':'')+'<br>';
   if(S.collab){const c=COLLABS[S.collab.k];h+='<span class="ok">'+c.name+' in progress… '+mmss(S.collab.t)+'</span>';}
@@ -1964,7 +1982,7 @@ armButton($('btnQuit'),()=>{$('menuBox').classList.add('hidden');gameOver('quit'
 $('btnFinalContinue').addEventListener('click',()=>{$('finalBox').classList.add('hidden');S.running=true;last=performance.now();});
 armButton($('btnFinalSabb'),doSabbatical);
 $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hidden');S.running=true;last=performance.now();});
-function doSabbatical(){recordRun('Sabbatical');NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}location.reload();}
+function doSabbatical(){recordRun('Sabbatical');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}hardReload();}
 armButton($('btnSabb'),doSabbatical);
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
@@ -1994,9 +2012,25 @@ armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem(SAVE_KEY())
 $('volRange').addEventListener('input',e=>{SET.vol=+e.target.value;$('volLab').textContent=Math.round(SET.vol*100)+'%';if(MASTER&&!muted)MASTER.gain.setTargetAtTime(SET.vol,AC.currentTime,0.05);saveSettings();});
 $('spdRange').addEventListener('input',e=>{SET.spd=+e.target.value;$('spdLab').textContent=SET.spd.toFixed(1)+'x';saveSettings();});
 $('btnExport').addEventListener('click',()=>{const code=exportCode();$('saveCode').value=code;$('saveCode').select();let ok=false;try{document.execCommand('copy');ok=true;}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>{$('saveMsg').textContent='Copied — paste it somewhere safe';}).catch(()=>{$('saveMsg').textContent=ok?'Copied':'Long-press the code below to copy';});else $('saveMsg').textContent=ok?'Copied':'Long-press the code below to copy';});
-armButton($('btnImport'),()=>{if(importCode($('saveCode').value)){NOSAVE=true;$('saveMsg').textContent='Loading…';location.reload();}else $('saveMsg').textContent='Invalid code';});
+function devCommand(c){
+  c=c.trim().toLowerCase();if(!c.startsWith('developer-'))return false;
+  const k=c.slice(10);$('menuBox').classList.add('hidden');S.running=true;last=performance.now();
+  if(k==='nature')startParty('nature');else if(k==='sister')startParty('sister');
+  else if(k==='fire'){if(!S.fire)startFire();}
+  else if(k==='dark'||k==='blackout'){S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};}
+  else if(k==='flood')startFlood();
+  else if(k==='ending')showFinal();else if(k==='nobel')showEnding();else if(k==='status'){S.running=false;showStatus();}
+  else if(k==='money'){S.money+=1000000;toast('💰 +$1M');}
+  else if(k==='papers'){S.accepted+=10;toast('📄 Papers +10');}
+  else if(k==='call'){S.call={t:50};toast('📜 Grant call forced open');}
+  else if(k==='open'){[1,2,3,4].forEach(i=>{if(!S.wings[i])openWing(WINGS[i],i);});}
+  else if(k==='hire'){['ms','ms','phd','pd'].forEach(x=>{S.lv[x]++;spawnWorker(x);});S.lv.admin=1;spawnAdmin();}
+  else{toast('❓ Unknown developer command: '+k);return true;}
+  toast('🛠 '+c);return true;
+}
+armButton($('btnImport'),()=>{if(devCommand($('saveCode').value)){$('saveCode').value='';return;}if(importCode($('saveCode').value)){NOSAVE=true;$('saveMsg').textContent='Loading…';location.reload();}else $('saveMsg').textContent='Invalid code';});
 
-$('verNote').textContent='v'+VERSION;logVisit();$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}location.reload();});
+$('verNote').textContent='v'+VERSION;logVisit();try{const fl=localStorage.getItem('lab_flash');if(fl==='sabb'){localStorage.removeItem('lab_flash');$('saveNote').textContent='🏝️ Back from sabbatical — new lab · income +'+(S.sabb*25)+'% · alumni bonus kept';}}catch(e){}$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}location.reload();});
 if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[Easy] ':'[Hell] ')+'Saved progress loaded — Papers '+S.accepted+' · '+fmt(S.money);}
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
 for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');if(S.lv.admin>0)spawnAdmin();
@@ -2007,6 +2041,7 @@ requestAnimationFrame(loop);
 <script>
 (function(){
   let lang='';try{lang=localStorage.getItem('lab_lang')||'';}catch(e){}
+  const q=new URLSearchParams(location.search).get('lang');if(q==='en'||q==='ko'){lang=q;try{localStorage.setItem('lab_lang',q);}catch(e){}}
   if(lang!=='ko'&&lang!=='en'){lang=/-en(\b|\.)/.test(location.hostname)?'en':(/\.vercel\.app$/.test(location.hostname)?'ko':((navigator.language||'').toLowerCase().startsWith('ko')?'ko':'en'));}
   document.documentElement.lang=lang;document.title=lang==='en'?'Lab Survival':'연구실에서 살아남기';
   const tpl=document.getElementById('tpl-'+lang);const frag=tpl.content.cloneNode(true);
