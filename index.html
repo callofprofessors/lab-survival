@@ -14,7 +14,8 @@
 html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
 body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:"Apple SD Gothic Neo",-apple-system,"Segoe UI",system-ui,sans-serif;overflow:hidden;touch-action:none;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 #wrap{position:relative;width:100%;height:100%}
-canvas{display:block;width:100%;height:100%}
+canvas{display:block;width:100%;height:100%;touch-action:none;-webkit-touch-callout:none}
+#wrap{touch-action:none}
 .hud{position:absolute;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 #tl{top:10px;left:12px;display:flex;flex-direction:column;gap:4px}
 #money{font-size:1.7rem;font-weight:800;color:var(--gold)}
@@ -176,7 +177,7 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ 안식년 떠나기 (종료)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.2</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.3</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
@@ -201,7 +202,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.1.2';const LANG='ko';
+const VERSION='2.1.3';const LANG='ko';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -600,6 +601,16 @@ const joyEl=$('joy'),knob=$('knob');
 cv.addEventListener('pointerdown',e=>{joy.active=true;joy.bx=e.clientX;joy.by=e.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=e.clientX+'px';joyEl.style.top=e.clientY+'px';knob.style.transform='translate(-50%,-50%)';try{cv.setPointerCapture(e.pointerId);}catch(err){}});
 cv.addEventListener('pointermove',e=>{if(!joy.active)return;let dx=e.clientX-joy.bx,dy=e.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';});
 const joyEnd=()=>{joy.active=false;joy.mag=0;joyEl.style.display='none';};
+// iOS: block the browser's own pan/zoom gestures so pointer events are not cancelled
+const noTouch=e=>{e.preventDefault();};
+cv.addEventListener('touchstart',noTouch,{passive:false});cv.addEventListener('touchmove',noTouch,{passive:false});cv.addEventListener('touchend',noTouch,{passive:false});
+document.addEventListener('gesturestart',noTouch,{passive:false});
+// touch fallback for browsers without reliable pointer events
+if(!window.PointerEvent){
+  cv.addEventListener('touchstart',e=>{const t=e.touches[0];joy.active=true;joy.bx=t.clientX;joy.by=t.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=t.clientX+'px';joyEl.style.top=t.clientY+'px';knob.style.transform='translate(-50%,-50%)';},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(!joy.active)return;const t=e.touches[0];let dx=t.clientX-joy.bx,dy=t.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';},{passive:false});
+  cv.addEventListener('touchend',joyEnd);cv.addEventListener('touchcancel',joyEnd);
+}
 cv.addEventListener('pointerup',joyEnd);cv.addEventListener('pointercancel',joyEnd);
 const keys={};window.addEventListener('keydown',e=>keys[e.key]=true);window.addEventListener('keyup',e=>keys[e.key]=false);
 
@@ -1152,7 +1163,7 @@ requestAnimationFrame(loop);
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ Take a sabbatical (ends this run)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.2</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.3</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ Settings</b><br>
@@ -1177,7 +1188,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='Could not loa
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.1.2';const LANG='en';
+const VERSION='2.1.3';const LANG='en';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -1576,6 +1587,16 @@ const joyEl=$('joy'),knob=$('knob');
 cv.addEventListener('pointerdown',e=>{joy.active=true;joy.bx=e.clientX;joy.by=e.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=e.clientX+'px';joyEl.style.top=e.clientY+'px';knob.style.transform='translate(-50%,-50%)';try{cv.setPointerCapture(e.pointerId);}catch(err){}});
 cv.addEventListener('pointermove',e=>{if(!joy.active)return;let dx=e.clientX-joy.bx,dy=e.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';});
 const joyEnd=()=>{joy.active=false;joy.mag=0;joyEl.style.display='none';};
+// iOS: block the browser's own pan/zoom gestures so pointer events are not cancelled
+const noTouch=e=>{e.preventDefault();};
+cv.addEventListener('touchstart',noTouch,{passive:false});cv.addEventListener('touchmove',noTouch,{passive:false});cv.addEventListener('touchend',noTouch,{passive:false});
+document.addEventListener('gesturestart',noTouch,{passive:false});
+// touch fallback for browsers without reliable pointer events
+if(!window.PointerEvent){
+  cv.addEventListener('touchstart',e=>{const t=e.touches[0];joy.active=true;joy.bx=t.clientX;joy.by=t.clientY;joy.dx=joy.dy=joy.mag=0;joyEl.style.display='block';joyEl.style.left=t.clientX+'px';joyEl.style.top=t.clientY+'px';knob.style.transform='translate(-50%,-50%)';},{passive:false});
+  cv.addEventListener('touchmove',e=>{if(!joy.active)return;const t=e.touches[0];let dx=t.clientX-joy.bx,dy=t.clientY-joy.by;const L=Math.hypot(dx,dy);const R=48;if(L>R){dx*=R/L;dy*=R/L;}joy.dx=dx/R;joy.dy=dy/R;joy.mag=Math.min(1,L/R);knob.style.transform='translate(calc(-50% + '+dx+'px),calc(-50% + '+dy+'px))';},{passive:false});
+  cv.addEventListener('touchend',joyEnd);cv.addEventListener('touchcancel',joyEnd);
+}
 cv.addEventListener('pointerup',joyEnd);cv.addEventListener('pointercancel',joyEnd);
 const keys={};window.addEventListener('keydown',e=>keys[e.key]=true);window.addEventListener('keyup',e=>keys[e.key]=false);
 
