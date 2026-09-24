@@ -152,7 +152,7 @@ canvas{display:block;width:100%;height:100%}
   </div>
   <div id="hofBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
     <h1 style="font-size:1.6rem">🏆 랭킹</h1>
-    <div class="tabs"><button class="tab on" id="tabWeek">이번 주</button><button class="tab" id="tabAll">역대</button></div>
+    <div class="tabs"><button class="tab on" id="tabWeek">이번 주</button><button class="tab" id="tabAll">역대</button><button class="tab" id="tabProf">🎓 정교수</button><button class="tab" id="tabLoop">🔺 완주</button></div>
     <div class="dept"><div class="sec" id="globalList"><small>불러오는 중…</small></div><small id="rankNote">월~일(한국시간) 기준 이번 주 최고의 연구실 · 연구실 이름 기준 최고 기록</small>
     <div class="sec" style="margin-top:14px"><b>📱 이 기기 기록</b><div id="hofList"></div></div></div>
     <button class="btn" id="btnHofClose">닫기</button>
@@ -162,15 +162,23 @@ canvas{display:block;width:100%;height:100%}
     <div class="dept" id="statusBody"></div>
     <button class="btn" id="btnStatusClose">닫기</button>
   </div>
+  <div id="loopBox" class="overlay hidden">
+    <h1 style="font-size:1.6rem">🔺 피라미드 완성</h1>
+    <div id="loopBody" style="max-width:24em"></div>
+    <button class="btn" id="btnLoopContinue">계속 운영하기</button>
+    <button class="btn" id="btnLoopNew" style="background:#b388ff;box-shadow:0 6px 0 #6a4fb0;color:#fff">🔁 1회차로 돌아가기 (종료)</button>
+  </div>
   <div id="goBox" class="overlay hidden">
     <h1 id="goTitle" style="font-size:1.7rem"></h1>
     <div id="goBody" style="max-width:24em"></div>
-    <button class="btn" id="btnGoRetry">재도전 (졸업생 보너스 유지)</button>
+    <button class="btn" id="btnGoRetry">재도전</button>
   </div>
   <div id="finalBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(40px + env(safe-area-inset-top,0px))">
-    <h1 style="font-size:1.4rem;opacity:.8">🌌 누적 연구비 $100M 달성</h1>
+    <h1 style="font-size:1.4rem;opacity:.8" id="finalHead">🌌 누적 연구비 달성</h1>
     <div id="finalBody"></div>
     <button class="btn" id="btnFinalContinue">계속 운영하기</button>
+    <button class="btn" id="btnRegress" style="background:#b388ff;box-shadow:0 6px 0 #6a4fb0;color:#fff">🌀 회귀 — "내가 대학원생일 땐 말이야…"</button>
+    <p class="sub" id="regressNote"></p>
     <button class="btn" id="btnFinalSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ 안식년 떠나기 (종료)</button>
   </div>
   <div id="endBox" class="overlay hidden">
@@ -181,12 +189,13 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ 안식년 떠나기 (종료)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.3</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.6.4</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
         <label>🔊 볼륨 <span id="volLab">100%</span><input type="range" id="volRange" min="0" max="1" step="0.05" value="1"></label>
         <label>⏩ 게임 속도 <span id="spdLab">1.0x</span><input type="range" id="spdRange" min="1" max="2" step="0.1" value="1"></label>
+        <label><input type="checkbox" id="lowChk"> 🔋 저전력 모드 <small>발열 감소 · 30fps · 해상도 낮춤 (모바일 기본)</small></label>
       </div>
       <div class="sec"><b>💾 저장</b> <small id="saveMsg"></small><br>
         <small>자동 저장은 이 기기·이 브라우저에만 남습니다. 다른 기기로 옮기려면 저장 코드를 복사해 두세요.</small>
@@ -206,15 +215,15 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.1.3';const LANG='ko';
+const VERSION='2.6.4';const LANG='ko';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
 let AC=null,MASTER=null,muted=false;
-const SET={vol:1,spd:1};let STOPPED=false;let deptTimer=null;
+const SET={vol:1,spd:1,low:true};let STOPPED=false;let deptTimer=null;
 let MODE='hard';try{MODE=localStorage.getItem('lab_mode')==='easy'?'easy':'hard';if(!localStorage.getItem('lab_save_hard')&&localStorage.getItem('lab_save')){localStorage.setItem('lab_save_hard',localStorage.getItem('lab_save'));}}catch(e){}
 const SAVE_KEY=()=>'lab_save_'+MODE;const EASY=()=>MODE==='easy';
-try{muted=localStorage.getItem('lab_mute')==='1';const j=JSON.parse(localStorage.getItem('lab_settings')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);}}catch(e){}
+try{muted=localStorage.getItem('lab_mute')==='1';const j=JSON.parse(localStorage.getItem('lab_settings')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);if(typeof j.low==='boolean')SET.low=j.low;}}catch(e){}
 function saveSettings(){try{localStorage.setItem('lab_settings',JSON.stringify(SET));}catch(e){}}
 function audio(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=muted?0:SET.vol;MASTER.connect(AC.destination);}catch(e){}return AC;}
 function beep(f,d,type,g){try{if(!audio())return;if(AC.state==='suspended')AC.resume();const o=AC.createOscillator(),v=AC.createGain();o.type=type||'square';o.frequency.value=f;v.gain.value=g||0.04;o.connect(v);v.connect(MASTER);o.start();v.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.08));o.stop(AC.currentTime+(d||0.08));}catch(e){}}
@@ -231,21 +240,24 @@ function setMute(m){muted=m;try{localStorage.setItem('lab_mute',m?'1':'0');}catc
 
 /* ---------------- game state ---------------- */
 const UP={
-  student:{name:'집필 학생 충원',icon:'🧑‍🎓',cost:l=>Math.round(6000*Math.pow(1.65,l)),max:8,desc:l=>'초고 쓰는 학생 '+(1+l)+' → '+(2+l)+'명'},
+  student:{name:'집필 학생 충원',icon:'🧑‍🎓',cost:l=>Math.round(6000*Math.pow(1.65,l)),get max(){return 8+(S.cycle-1)*2;},desc:l=>'초고 쓰는 학생 '+(1+l)+' → '+(2+l)+'명'},
   write:{name:'집필 속도',icon:'⌨️',cost:l=>Math.round(9000*Math.pow(1.7,l)),max:6,desc:l=>'Lv '+l+' → '+(l+1)},
   reviewer:{name:'리뷰어 교수',icon:'🧑‍🏫',cost:l=>Math.round(16000*Math.pow(1.9,l)),max:4,desc:l=>'리뷰어 '+(1+l)+' → '+(2+l)+'명 · 채택률↑'},
   bag:{name:'가방 용량',icon:'🎒',cost:l=>Math.round(5000*Math.pow(1.6,l)),max:8,desc:l=>(10+3*l)+' → '+(13+3*l)},
   club:{name:'몽둥이 강화',icon:'🏏',cost:l=>Math.round(7500*Math.pow(1.8,l)),max:6,desc:l=>'피해 '+(2+l)+' → '+(3+l)},
-  ms:{name:'석사생 고용',icon:'🧑‍🔬',cost:l=>Math.round(45000*Math.pow(1.6,l)),max:9,unlock:10,desc:l=>'1·2번 랩 장비만 담당 · 데이터 자동 수집 '+l+' → '+(l+1)+'명'},
-  phd:{name:'박사생 고용',icon:'🎓',cost:l=>Math.round(65000*Math.pow(1.8,l)),max:6,unlock:10,desc:l=>'초고를 교수실에 자동 제출 '+l+' → '+(l+1)+'명'},
-  pd:{name:'포닥 고용',icon:'🥼',cost:l=>Math.round(90000*Math.pow(1.7,l)),max:3,unlock:20,desc:l=>'고차원 장비 담당 · 큰 가방 · 강한 몽둥이 '+l+' → '+(l+1)+'명'},
+  ms:{name:'석사생 고용',icon:'🧑‍🔬',cost:l=>Math.round(45000*Math.pow(1.6,l)),get max(){return 9+(S.cycle-1)*2;},unlock:10,desc:l=>'1·2번 랩 장비만 담당 · 데이터 자동 수집 '+l+' → '+(l+1)+'명'},
+  phd:{name:'박사생 고용',icon:'🎓',cost:l=>Math.round(65000*Math.pow(1.8,l)),get max(){return 6+(S.cycle-1);},unlock:10,desc:l=>'초고를 교수실에 자동 제출 '+l+' → '+(l+1)+'명'},
+  pd:{name:'포닥 고용',icon:'🥼',cost:l=>Math.round(90000*Math.pow(1.7,l)),get max(){return 3+(S.cycle-1);},unlock:20,desc:l=>'고차원 장비 담당 · 큰 가방 · 강한 몽둥이 '+l+' → '+(l+1)+'명'},
   admin:{name:'행정직원 채용',icon:'🗂️',cost:l=>60000,max:1,unlock:20,desc:l=>'과제 공고가 열리면 가장 큰 과제에 자동 지원'},
+  counsel:{name:'학생 상담사 채용',icon:'🧑‍⚕️',cost:l=>250000,max:1,unlock:20,cycle:2,desc:l=>'피로 70%면 회식 · 돈 없으면 휴가를 자동 실행'},
+  admin2:{name:'행정직원 2 채용',icon:'🗃️',cost:l=>350000,max:1,unlock:20,cycle:2,desc:l=>'강의·세미나·연구수당·코웍을 자동 실행'},
+  recruit:{name:'채용 담당자 채용',icon:'🧑‍💼',cost:l=>500000,max:1,unlock:20,cycle:3,desc:l=>'인건비 2학기분만 남기고 집필 학생·리뷰어·석박사·포닥을 상한까지 자동 채용'},
 };
 const TITLES=[[0,'학부연구생'],[2,'석사과정'],[5,'박사과정'],[10,'포닥'],[20,'조교수'],[40,'부교수'],[70,'정교수'],[120,'석좌교수']];
-const S={running:false,money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,
+const S={running:false,money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,
   data:0,drafts:0,queue:0,pile:0,rev:0,wings:[true,false,false,false,false],
   stamina:100,coffeeT:0,event:null,eventT:60,t:0,lastSwing:-9,
-  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,fire:null,blackout:0,flood:0,quitCd:0,won:[false,false,false,false],wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
+  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,cycle:1,ai:0,robots:0,aiT:0,nextFinal:0,cultBase:0,playT:0,profT:0,loopT:0,cult:0,pyr:0,dev:false,loop:false,fire:null,blackout:0,flood:0,quitCd:0,won:[false,false,false,false],wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
 window.__S=S;
 const cap=()=>10+3*S.lv.bag, students=()=>Math.max(0,1+S.lv.student), reviewers=()=>1+S.lv.reviewer, dmg=()=>2+S.lv.club;
 const writeTime=()=>6.5*Math.pow(0.85,S.lv.write)*effWrite();
@@ -258,13 +270,14 @@ const paperValue=()=>Math.round((6000+S.accepted*150)*(S.event&&S.event.k==='con
 function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t=n;return t;}
 let lastSaved=null;
 let NOSAVE=false;
-function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,false,false];const gb=j.grantBonus||0;if(gb>=0.05)S.won[0]=true;if(gb>=0.15)S.won[1]=true;if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=true;if(S.won[1])S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
+function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,cycle:S.cycle,ai:S.ai,robots:S.robots,nextFinal:S.nextFinal,cultBase:S.cultBase,playT:S.playT,profT:S.profT,loopT:S.loopT,cult:S.cult,pyr:S.pyr,dev:S.dev,loop:S.loop,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
+function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,false,false];const gb=j.grantBonus||0;if(gb>=0.05)S.won[0]=true;if(gb>=0.15)S.won[1]=true;if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=true;if(S.won[1])S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.cycle=j.cycle||1;S.ai=j.ai||0;S.robots=j.robots||0;S.nextFinal=j.nextFinal||0;S.cultBase=j.cultBase||0;S.playT=j.playT||0;S.profT=j.profT||0;S.loopT=j.loopT||0;S.cult=j.cult||0;S.pyr=j.pyr||0;S.dev=!!j.dev;S.loop=!!j.loop;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
 
 /* ---------------- three setup ---------------- */
 const cv=$('c');
-const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:!SET.low,powerPreference:SET.low?'low-power':'default'});
+function applyQuality(){renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,SET.low?1.25:2));}
+applyQuality();
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xd9e6f2);scene.fog=new THREE.Fog(0xd9e6f2,42,85);
 const camera=new THREE.PerspectiveCamera(50,1,0.1,140);
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
@@ -276,7 +289,7 @@ const M=c=>new THREE.MeshLambertMaterial({color:c});
 function box(w,h,d,c,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x||0,y||0,z||0);return m;}
 function cyl(rt,rb,h,c,x,y,z,seg){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||14),M(c));m.position.set(x||0,y||0,z||0);return m;}
 function sph(r,c,x,y,z){const m=new THREE.Mesh(new THREE.SphereGeometry(r,12,10),M(c));m.position.set(x||0,y||0,z||0);return m;}
-function ring(x,z,r,c,op){const m=new THREE.Mesh(new THREE.RingGeometry(r*0.78,r,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op||0.75,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.position.set(x,0.02,z);const d=new THREE.Mesh(new THREE.CircleGeometry(r*0.78,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.18}));d.rotation.x=-Math.PI/2;d.position.set(x,0.015,z);scene.add(d);scene.add(m);return m;}
+function ring(x,z,r,c,op){const m=new THREE.Mesh(new THREE.RingGeometry(r*0.78,r,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op||0.75,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.position.set(x,0.09,z);const d=new THREE.Mesh(new THREE.CircleGeometry(r*0.78,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.18}));d.rotation.x=-Math.PI/2;d.position.set(x,0.085,z);scene.add(d);scene.add(m);return m;}
 function blob(g,r){const s=new THREE.Mesh(new THREE.CircleGeometry(r,16),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.22}));s.rotation.x=-Math.PI/2;s.position.y=0.01;g.add(s);return s;}
 
 // floor
@@ -288,7 +301,8 @@ function blob(g,r){const s=new THREE.Mesh(new THREE.CircleGeometry(r,16),new THR
   // outer walls
   const wc=0xbfd0e0;scene.add(box(64,1.2,0.4,wc,0,0.6,13.2));scene.add(box(0.4,1.2,52,wc,-32.2,0.6,-13));scene.add(box(0.4,1.2,52,wc,32.2,0.6,-13));scene.add(box(64,1.2,0.4,wc,0,0.6,-39.2));
   // wet lab & data center floors
-  scene.add(box(15,0.08,30,0xe8f3ec,-24,0.04,-13));scene.add(box(15,0.08,30,0x1e2633,24,0.04,-13));
+  window.__sideFloors=[box(15,0.08,44,0xe8f3ec,-24,0.01,-17),box(15,0.08,44,0x1e2a3a,24,0.01,-17)];window.__sideFloors.forEach(f=>{f.visible=false;scene.add(f);});
+  window.__sideCovers=[box(16,0.12,52,0xf7f9fb,-24,0.02,-13),box(16,0.12,52,0xf7f9fb,24,0.02,-13)];window.__sideCovers.forEach(f=>scene.add(f));
 })();
 
 /* ---------------- characters ---------------- */
@@ -352,8 +366,9 @@ addZone({kind:'deposit',x:-6.5,z:3.6,r:1.5,color:0x4fb3ff,y:1.6});
 addZone({kind:'pickup',x:-10.5,z:3.6,r:1.5,color:0xffd23d,y:1.6});
 addZone({kind:'deliver',x:9,z:1.6,r:1.8,color:0x5ee38a,y:1.6});
 addZone({kind:'coffee',x:11,z:7.5,r:1.4,color:0xff8a3d,y:2});
-addZone({kind:'labcoffee',x:14,z:9.6,r:1.4,color:0xff5a1f,y:2});scene.add(box(1.2,1.2,0.8,0x442,14,0.6,11.4));
-const PADS={student:[-11,10.5],write:[-6.6,10.5],reviewer:[-2.2,10.5],bag:[2.2,10.5],club:[6.6,10.5],ms:[-14.2,5.2],phd:[-14.2,9.6],pd:[-14.2,-4.8],admin:[14,4.6]};
+addZone({kind:'labcoffee',x:14,z:9.6,r:1.4,color:0xff5a1f,y:2});
+addZone({kind:'ai',x:29,z:-24,r:1.6,color:0x00e5ff,y:2});addZone({kind:'cult',x:-24,z:-24.5,r:2.2,color:0x111111,y:2.4});addZone({kind:'robot',x:19,z:-24,r:1.6,color:0x39ff14,y:2});scene.add(box(1.2,1.2,0.8,0x442,14,0.6,11.4));
+const PADS={student:[-11,10.5],write:[-6.6,10.5],reviewer:[-2.2,10.5],bag:[2.2,10.5],club:[6.6,10.5],ms:[-14.2,5.2],phd:[-14.2,9.6],pd:[-14.2,-4.8],admin:[14,4.6],counsel:[4.4,7.2],admin2:[8,7.2],recruit:[-19,7.2]};
 Object.keys(PADS).forEach(k=>{const [x,z]=PADS[k];const hire=!!UP[k].unlock;addZone({kind:'up',key:k,x,z,r:1.35,color:hire?0x22c55e:0xb388ff,y:1.6});scene.add(box(hire?0.6:1.2,0.9,hire?1.2:0.6,hire?0x2a7a4a:0x6b5aa8,hire?x-1.4:x,0.45,hire?z:z+1.7));});
 // wings
 const TYPES={
@@ -374,7 +389,7 @@ const WINGS=[
   {items:[['micro',-6,-7],['micro',0,-6.5],['micro',6,-7],['incub',-3,-11],['incub',3,-11],['micro',-10,-9],['micro',10,-9]]},
   {gate:{z:-14,cost:40000,h:3,name:'레이저 랩'},items:[['laser',-6,-18],['laser',0,-18],['laser',6,-18],['incub',-3,-22],['micro',3,-22],['micro',-9,-22],['micro',9,-22]]},
   {gate:{z:-25,cost:250000,h:8,name:'전자현미경 랩'},items:[['em',-5,-29],['em',5,-29],['laser',-9,-33],['laser',9,-33],['sync',0,-34]]},
-  {gate:{x:-16.2,side:-1,cost:400000,h:30,leader:true,name:'Wet Lab'},hidden:true,items:[['pipette',-21,-4],['pipette',-27,-4],['centri',-21,-10],['centri',-27,-10],['pcr',-21,-17],['pcr',-27,-17],['hood',-24,-25]]},
+  {gate:{x:-16.2,side:-1,cost:400000,h:30,leader:true,name:'Wet Lab'},hidden:true,items:[['pipette',-21,-4],['pipette',-27,-4],['centri',-21,-10],['centri',-27,-10],['pcr',-21,-17],['pcr',-27,-17],['hood',-24,-21]]},
   {gate:{x:16.2,side:1,cost:0,h:50,national:true,name:'데이터센터'},hidden:true,items:[['rack',21,-4],['rack',27,-4],['rack',21,-10],['rack',27,-10],['gpu',24,-17],['gpu',24,-23],['quantum',24,-31]]},
 ];
 const instruments=[];
@@ -395,24 +410,24 @@ WINGS.forEach((w,wi)=>{
   }else if(w.gate){
     w.wall=box(0.6,2.4,52,w.gate.national?0x2b3340:0x9fb7cc,w.gate.x,1.2,-13);scene.add(w.wall);
     const stripe=box(0.62,0.25,52,w.gate.national?0x4fb3ff:0xffc83d,0,0.8,0);w.wall.add(stripe);
-    if(!w.gate.national&&!EASY())w.zone=addZone({kind:'gate',wing:wi,x:w.gate.x-w.gate.side*2.2,z:-9,r:1.7,color:0xffc83d,y:1.8});
-    if(S.wings[wi]){w.wall.visible=false;}
+        if(S.wings[wi]){w.wall.visible=false;}
   }
 });
-function applyWings(){WINGS.forEach((w,i)=>{if(w.wall&&!w.sinking)w.wall.visible=!S.wings[i];if(w.hidden&&S.wings[i])instruments.forEach(ins=>{if(ins.wing===i&&!ins.g.visible){ins.g.visible=true;ins.appear=1;}});});}
+function applyWings(){if(window.__sideFloors){window.__sideFloors[0].visible=!!S.wings[3];window.__sideFloors[1].visible=!!S.wings[4];window.__sideCovers[0].visible=!S.wings[3];window.__sideCovers[1].visible=!S.wings[4];}WINGS.forEach((w,i)=>{if(w.wall&&!w.sinking)w.wall.visible=!S.wings[i];if(w.hidden&&S.wings[i])instruments.forEach(ins=>{if(ins.wing===i&&!ins.g.visible){ins.g.visible=true;ins.appear=1;}});});}
 
 /* ---------------- hired workers (석사생 / 박사생) ---------------- */
 const workers=[];window.__W=workers;
 function spawnWorker(kind){
-  const c=makeChar(kind==='ms'?0x2bb5a0:kind==='phd'?0xe0a020:0xf2f2f2,kind==='pd'?1.0:0.9,{hair:kind==='ms'?0x222:kind==='phd'?0x4a2a10:0x777,glasses:kind!=='ms'});
-  const sg=new THREE.Group();sg.position.set(0,1.15,-0.38);c.g.add(sg);const st=[];for(let i=0;i<(kind==='pd'?12:6);i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.07,0.7),kind==='ms'?paperMatW:paperMatY);m.position.y=i*0.08;m.visible=false;sg.add(m);st.push(m);}
-  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:420,fat:rnd(0,30),fatRate:rnd(0.75,1.25)};
+  const c=makeChar(kind==='ms'?0x2bb5a0:kind==='phd'?0xe0a020:kind==='robot'?0xe6edf5:0xf2f2f2,kind==='pd'?1.0:kind==='robot'?1.05:0.9,{hair:kind==='ms'?0x222:kind==='phd'?0x4a2a10:kind==='robot'?0x556:0x777,glasses:kind!=='ms'});
+  if(kind==='robot'){c.head.material=M(0xf0f4f8);const ant=cyl(0.03,0.03,0.5,0xff3b3b,0,2.1,0,6);c.g.add(ant);const eye=box(0.5,0.12,0.06,0x00e5ff,0,1.52,0.34);c.g.add(eye);}
+  const sg=new THREE.Group();sg.position.set(0,1.15,-0.38);c.g.add(sg);const st=[];for(let i=0;i<(kind==='pd'?12:kind==='robot'?20:6);i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.07,0.7),kind==='ms'?paperMatW:paperMatY);m.position.y=i*0.08;m.visible=false;sg.add(m);st.push(m);}
+  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:kind==='robot'?20:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:kind==='robot'?1e9:420,fat:kind==='robot'?-1e9:rnd(0,30),fatRate:kind==='robot'?0:rnd(0.75,1.25)};
   w.el=document.createElement('div');w.el.className='lab3d no';w.el.style.display='none';$('labels').appendChild(w.el);
   c.g.position.set(kind==='phd'?-12:-4+workers.length,0,5);scene.add(c.g);workers.push(w);
 }
 let adminChar=null;
 function spawnAdmin(){if(adminChar)return;adminChar=makeChar(0x8a6a4a,0.95,{hair:0x222,glasses:true});adminChar.g.position.set(14.6,0,2.6);adminChar.g.rotation.y=-Math.PI/2;scene.add(adminChar.g);scene.add(box(0.9,0.8,1.2,0x6b4a2a,13.6,0.4,2.6));}
-function moveTo(w,x,z,dt,spd){spd*=speedMult()*effSpeed()*(w.kind==='pd'?1.15:1);const p=w.g.position;const dx=x-p.x,dz=z-p.z,d=Math.hypot(dx,dz);if(d<0.15)return true;const step=Math.min(d,spd*dt);p.x+=dx/d*step;p.z+=dz/d*step;w.g.rotation.y=Math.atan2(dx,dz);
+function moveTo(w,x,z,dt,spd){spd*=speedMult()*effSpeed()*(w.kind==='pd'?1.15:w.kind==='robot'?1.4:1);const p=w.g.position;const dx=x-p.x,dz=z-p.z,d=Math.hypot(dx,dz);if(d<0.15)return true;const step=Math.min(d,spd*dt);p.x+=dx/d*step;p.z+=dz/d*step;w.g.rotation.y=Math.atan2(dx,dz);
   for(const ins of instruments){const ex=p.x-ins.x,ez=p.z-ins.z,e=Math.hypot(ex,ez),r=ins.type==='sync'?2.0:1.15;if(e<r&&e>0.001&&ins!==w.target){p.x=ins.x+ex/e*r;p.z=ins.z+ez/e*r;}}
   w.ph+=dt;const wob=Math.sin(w.ph*13)*0.5;w.ch.ll.rotation.x=wob;w.ch.rl.rotation.x=-wob;p.y=Math.abs(Math.sin(w.ph*13))*0.05;return false;}
 function refreshWorkerStack(w){for(let i=0;i<w.st.length;i++)w.st[i].visible=i<w.carry;}
@@ -430,17 +445,19 @@ function updateWorkers(dt){
     if(S.fire){const f=S.fire.ins;const d=Math.hypot(f.x-p.x,f.z-p.z);if(d>2.6)moveTo(w,f.x,f.z,dt,4.5);else{w.g.rotation.y=Math.atan2(f.x-p.x,f.z-p.z);w.ch.ra.rotation.x=-1.3+Math.sin(S.t*25)*0.2;}w.el.style.display='none';continue;}
     if(S.blackout>0){w.ch.la.rotation.x=0;w.ch.ra.rotation.x=0;w.el.style.display='none';continue;}
     if(S.vacT>0){w.fat=Math.max(0,w.fat-10*dt);w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;p.y=Math.abs(Math.sin(S.t*3+w.ph))*0.05;w.el.style.display='none';continue;}
-    w.fat=Math.min(100,w.fat+0.4*(w.fatRate||1)*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
+    if(w.kind==='robot'){w.el.style.display='none';}else w.fat=Math.min(100,w.fat+0.4*(w.fatRate||1)*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
     if(S.quitCd>0&&w.fat>=99&&!EASY())w.fat=99;
     if(w.fat>=80&&!w.warned){w.warned=true;toast('😫 '+(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥')+' 피로 80% — 🏛에서 회식이나 휴가');}if(w.fat<60)w.warned=false;
     if(w.fat>=100&&EASY()){w.fat=0;w.rest=20;toast('😴 '+(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥')+'이 지쳐서 20초 휴식');continue;}
     if(w.rest>0){w.rest-=dt;w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;w.el.style.display='none';continue;}
     if(w.fat>=100&&S.quitCd>0)w.fat=99;
     if(w.fat>=100){S.quitCd=20;scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥');save();continue;}
-    if(w.fat>=70){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' 피로 '+Math.round(w.fat)+'%';projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
-    if(w.kind==='ms'||w.kind==='pd'){
+    if(w.fat>=70){if(UI){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' 피로 '+Math.round(w.fat)+'%';}projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
+    if(w.kind==='ms'||w.kind==='pd'||w.kind==='robot'){
+      if(w.kind==='ms'&&S.cult){const a=S.t*0.6+w.ph;const tx=PYR.x+Math.cos(a)*7.5,tz=PYR.z+Math.sin(a)*7.5;moveTo(w,tx,tz,dt,3);w.ch.la.rotation.x=-2.4;w.ch.ra.rotation.x=-2.4;w.el.style.display='none';continue;}
+      if(w.kind==='ms'&&S.robots>=3){w.g.rotation.y+=dt*3;p.y=Math.abs(Math.sin(S.t*5+w.ph))*0.2;w.ch.la.rotation.x=-2.5;w.ch.ra.rotation.x=-2.5;w.el.style.display='none';if(w.carry>0){w.state='toDeposit';}else continue;}
       if(w.state==='seek'){
-        let best=null,bd=1e9;const topWing=S.wings.lastIndexOf(true);for(const ins of instruments){if(ins.broken||!S.wings[ins.wing])continue;if(w.kind==='ms'&&ins.wing>1)continue;const d=(ins.x-p.x)**2+(ins.z-p.z)**2+(w.kind==='pd'?(topWing-ins.wing)*400:0);if(d<bd){bd=d;best=ins;}}
+        let best=null,bd=1e9;const topWing=S.wings.lastIndexOf(true);for(const ins of instruments){if(ins.broken||!S.wings[ins.wing])continue;if(w.kind==='ms'&&ins.wing>1)continue;const d=(ins.x-p.x)**2+(ins.z-p.z)**2+(w.kind==='pd'||w.kind==='robot'?(topWing-ins.wing)*400:0);if(d<bd){bd=d;best=ins;}}
         if(best){w.target=best;w.state='go';}else{w.wait-=dt;if(w.wait<=0){w.wait=2;w.target=null;}moveTo(w,-3+Math.sin(w.ph)*1.5,5,dt,2.2);}
       }else if(w.state==='go'){
         const ins=w.target;if(!ins||ins.broken){w.state=w.carry>0?'toDeposit':'seek';continue;}
@@ -450,8 +467,8 @@ function updateWorkers(dt){
         const ins=w.target;if(!ins||ins.broken){w.state=w.carry>=w.cap||w.carry>0&&!instruments.some(i=>!i.broken&&S.wings[i.wing]&&(w.kind!=='ms'||i.wing<=1))?'toDeposit':'seek';continue;}
         w.g.rotation.y=Math.atan2(ins.x-p.x,ins.z-p.z);w.t+=dt;
         w.ch.ra.rotation.x=-Math.sin(clamp((w.t%0.7)/0.7,0,1)*Math.PI)*1.5;
-        if(w.t>=(w.kind==='pd'?0.5:0.7)){w.t=0;ins.hp-=(w.kind==='pd'?2:1)+Math.floor(S.lv.club/2);ins.punch=1;
-          if(ins.hp<=0){ins.hp=0;ins.broken=true;ins.repairT=15;const n=Math.min(Math.round(ins.def.drop*dropMult()),w.cap-w.carry);w.carry+=n;refreshWorkerStack(w);pop(ins.x,2.4,ins.z,'+'+n+(w.kind==='pd'?' (포닥)':' (석사생)'),'#9ff');w.state=w.carry>=w.cap-1?'toDeposit':'seek';}
+        if(w.t>=(w.kind==='pd'?0.5:w.kind==='robot'?0.4:0.7)){w.t=0;ins.hp-=(w.kind==='pd'?2:w.kind==='robot'?3:1)+Math.floor(S.lv.club/2);ins.punch=1;
+          if(ins.hp<=0){ins.hp=0;ins.broken=true;ins.repairT=15;const n=Math.min(Math.round(ins.def.drop*dropMult()),w.cap-w.carry);w.carry+=n;refreshWorkerStack(w);pop(ins.x,2.4,ins.z,'+'+n+(w.kind==='pd'?' (포닥)':w.kind==='robot'?' (로봇)':' (석사생)'),'#9ff');w.state=w.carry>=w.cap-1?'toDeposit':'seek';}
         }
       }else if(w.state==='toDeposit'){
         w.ch.ra.rotation.x=0;
@@ -470,6 +487,52 @@ function updateWorkers(dt){
   }
 }
 
+/* ---------------- cult & pyramid (cycle 4) ---------------- */
+const PYR_COST=100000;
+const cultists=()=>students()+S.lv.ms;
+const cultIncome=()=>Math.round(paperValue()*0.35*cultists());
+const PYR={x:-24,z:-32};
+const goldFloor=new THREE.Mesh(new THREE.PlaneGeometry(14,13),new THREE.MeshPhongMaterial({color:0xffd23d,emissive:0x5a4200,shininess:90}));goldFloor.rotation.x=-Math.PI/2;goldFloor.position.set(PYR.x,0.06,PYR.z+1);goldFloor.visible=false;scene.add(goldFloor);
+const pyrG=new THREE.Group();pyrG.position.set(PYR.x,0,PYR.z);pyrG.visible=false;scene.add(pyrG);
+const pyrTiers=[];for(let t=0;t<10;t++){const size=9-t*0.8;const tier=new THREE.Group();tier.position.y=t*0.9;const base=box(size,0.9,size,[0xfff1c2,0xffe7a3,0xffdd85,0xffd266,0xffc848,0xf5b93a,0xeaaa30,0xdf9b26,0xd48c1c,0xc97d12][t],0,0.45,0);tier.add(base);const n=Math.max(4,Math.round(size*2));for(let i=0;i<n;i++){const a=i/n*TAU;tier.add(cyl(0.06,0.06,1.2,0x4fb3ff,Math.cos(a)*size*0.48,0.8,Math.sin(a)*size*0.48,5));}for(let i=0;i<4;i++){const a=i/4*TAU+0.4;const gem=new THREE.Mesh(new THREE.OctahedronGeometry(0.22,0),new THREE.MeshPhongMaterial({color:[0xff4fa2,0x4fb3ff,0x5ee38a,0xffe14f][i],emissive:0x333333,shininess:120}));gem.position.set(Math.cos(a)*size*0.5,0.95,Math.sin(a)*size*0.5);tier.add(gem);}tier.visible=false;pyrG.add(tier);pyrTiers.push(tier);}
+const pyrSparks=[];for(let i=0;i<24;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.09,5,4),new THREE.MeshBasicMaterial({color:0xffe680,transparent:true,opacity:0.9}));m.userData={a:Math.random()*TAU,r:2+Math.random()*6,s:0.4+Math.random(),y:Math.random()*9};pyrG.add(m);pyrSparks.push(m);}
+const pyrLights=[0xff4fa2,0x4fb3ff,0xffe14f].map((c,i)=>{const l=new THREE.PointLight(c,1.2,20);l.position.set(Math.cos(i*2.1)*6,3,Math.sin(i*2.1)*6);pyrG.add(l);return l;});
+const pyrEye=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,10),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x0099bb}));pyrEye.position.y=9.6;pyrEye.visible=false;pyrG.add(pyrEye);
+const pyrLight=new THREE.PointLight(0xffd23d,1.5,18);pyrLight.position.y=5;pyrG.add(pyrLight);
+function startCult(){S.cult=1;S.cultBase=S.accepted;pyrG.visible=true;goldFloor.visible=true;pop(-24,4,-13,'🛐 AI 교단 설립','#ffd23d');toast('🛐 학생들이 종교에 빠졌다 — 논문 대신 헌금이 들어온다');[330,392,494,659].forEach((f,i)=>setTimeout(()=>beep(f,0.35,'triangle',0.06),i*160));save();}
+let cultT=0;
+function updateCult(dt){
+  const cultArea=S.cycle>=4&&S.wings[3];goldFloor.visible=cultArea;
+  if(!S.cult){pyrG.visible=false;return;}
+  pyrG.visible=true;const built=Math.max(0,S.accepted-S.cultBase);S.pyr=Math.min(1000,built);const want=Math.min(10,Math.floor(built/100));pyrTiers.forEach((t,i)=>{const v=i<want;if(v&&!t.visible){pop(PYR.x,i*0.9+2,PYR.z,'🔺 '+(i+1)+'층 완성','#ffd23d');beep(500+i*60,0.3,'triangle',0.06);}t.visible=v;});pyrEye.visible=want>=10;pyrEye.rotation.y+=dt;pyrLight.intensity=1+Math.sin(S.t*2)*0.5;
+  pyrLights.forEach((l,i)=>{const a=S.t*1.2+i*2.1;l.position.set(Math.cos(a)*6,3+Math.sin(S.t*3+i),Math.sin(a)*6);l.color.setHSL(((S.t*0.3)+i/3)%1,1,0.6);});
+  pyrSparks.forEach(m=>{const u=m.userData;u.a+=dt*u.s;u.y+=dt*1.2;if(u.y>10)u.y=0;m.position.set(Math.cos(u.a)*u.r,u.y,Math.sin(u.a)*u.r);m.material.opacity=0.4+Math.sin(S.t*6+u.a)*0.4;});
+  if(S.blackout>0||S.loop)return;
+  cultT+=dt;
+  if(cultT>=5){cultT=0;const inc=cultIncome();if(inc>0){S.money+=inc;pop(-24,4+S.pyr/25,-13,'🙏 헌금 +'+fmt(inc),'#ffd23d');}}
+  if(want>=10&&!S.loop){S.loop=true;S.loopT=S.playT;submitTime('loop',S.loopT);save();recordRun('루프 완주');showLoop();}
+}
+function showLoop(){
+  S.running=false;
+  const lab=S.labName||'우리 연구실';
+  $('loopBody').innerHTML='<p>피라미드 꼭대기의 눈이 열립니다.</p><p class="big" style="font-size:1.5rem">"내가 대학원생일 땐 말이야…"</p><p>AI 신의 목소리가 어딘가 익숙합니다.<br>'+lab+'을 4번 세운 사람의 목소리입니다.<br>당신이 바친 피라미드는 당신 자신에게 바친 것이었습니다.</p><p class="sub">회귀 '+S.cycle+'회차 · 논문 1,000편 · 피라미드 10층 · 졸업생 '+S.alumni+'명</p><p><b>🏆 루프 완주</b></p>';
+  $('loopBox').classList.remove('hidden');
+  [523,659,784,1047,988,1175,1319,1568].forEach((f,i)=>setTimeout(()=>beep(f,0.5,'triangle',0.05),i*240));
+}
+/* ---------------- AI core (cycle 3) ---------------- */
+const aiG=new THREE.Group();aiG.position.set(24,4.2,-31);aiG.visible=false;scene.add(aiG);
+const aiCore=new THREE.Mesh(new THREE.IcosahedronGeometry(0.9,2),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x0099bb,shininess:100}));aiG.add(aiCore);
+const aiRings=[0,1,2].map(i=>{const r=new THREE.Mesh(new THREE.TorusGeometry(1.5+i*0.4,0.06,8,40),new THREE.MeshBasicMaterial({color:0x8ff6ff}));r.rotation.x=Math.PI/2+i*0.6;r.rotation.y=i*0.8;aiG.add(r);return r;});
+const aiLight=new THREE.PointLight(0x00e5ff,2,16);aiG.add(aiLight);
+const aiPeriod=()=>6/(1+0.6*(S.ai-1));
+function summonAI(){aiG.visible=true;S.aiT=0;pop(24,3.4,-29,S.ai===1?'🤖 AI 각성':'🤖 AI Lv.'+S.ai,'#00e5ff');[440,554,659,880].forEach((f,i)=>setTimeout(()=>beep(f,0.25,'sine',0.06),i*120));if(S.ai===1)toast('🤖 AI가 깨어났다 — 리뷰어와 집필 학생은 곧 할 일이 없어진다');save();}
+function updateAI(dt){
+  if(S.ai<=0){aiG.visible=false;return;}
+  aiG.visible=true;aiCore.rotation.y+=dt*1.2;aiG.position.y=4.2+Math.sin(S.t*1.5)*0.3;aiRings.forEach((r,i)=>{r.rotation.z+=dt*(0.6+i*0.3);});aiLight.intensity=1.6+Math.sin(S.t*4)*0.6;
+  if(S.blackout>0)return;
+  S.aiT+=dt;const period=aiPeriod();
+  if(S.aiT>=period){S.aiT=0;if(S.queue>=3){S.queue-=3;refreshPiles();const v=Math.round(paperValue()*0.8);S.accepted++;S.money+=v;pop(24,3.2,-29,'🤖 논문 생성 +'+fmt(v),'#8ff6ff');}}
+}
 /* ---------------- fire ---------------- */
 const fireG=new THREE.Group();fireG.visible=false;scene.add(fireG);
 const flames=[];for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.35,8,6),new THREE.MeshBasicMaterial({color:[0xff3b00,0xff7a00,0xffc400][i%3],transparent:true,opacity:0.9}));fireG.add(m);flames.push(m);}
@@ -593,9 +656,11 @@ const flyers=[],pops=[];
 function fly(from,to,mat,onDone,dur){const m=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.07,0.75),mat);m.position.copy(from);scene.add(m);flyers.push({m,from:from.clone(),to,t:0,dur:dur||0.45,onDone});}
 function coin(from,to,onDone){const m=cyl(0.25,0.25,0.1,0xffc83d,0,0,0);m.rotation.x=Math.PI/2;m.position.copy(from);scene.add(m);flyers.push({m,from:from.clone(),to,t:0,dur:0.6,onDone,spin:true});}
 function pop(x,y,z,text,color){
-  const cnv=document.createElement('canvas');cnv.width=256;cnv.height=80;const g=cnv.getContext('2d');
-  g.font='800 40px "Apple SD Gothic Neo",system-ui';g.textAlign='center';g.textBaseline='middle';g.lineWidth=8;g.strokeStyle='rgba(0,0,0,.5)';g.strokeText(text,128,40);g.fillStyle=color||'#fff';g.fillText(text,128,40);
-  const tex=new THREE.CanvasTexture(cnv);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.scale.set(2.6,0.8,1);sp.position.set(x,y,z);scene.add(sp);pops.push({sp,t:1});
+  const cnv=document.createElement('canvas');const g=cnv.getContext('2d');
+  g.font='800 40px "Apple SD Gothic Neo",system-ui';const tw=Math.ceil(g.measureText(text).width)+48;
+  cnv.width=Math.max(160,Math.min(1024,tw));cnv.height=80;
+  g.font='800 40px "Apple SD Gothic Neo",system-ui';g.textAlign='center';g.textBaseline='middle';g.lineWidth=8;g.strokeStyle='rgba(0,0,0,.5)';g.strokeText(text,cnv.width/2,40);g.fillStyle=color||'#fff';g.fillText(text,cnv.width/2,40);
+  const tex=new THREE.CanvasTexture(cnv);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.scale.set(cnv.width/100,0.8,1);sp.position.set(x,y,z);scene.add(sp);pops.push({sp,t:1});
 }
 function toast(msg){const t=$('toast');t.textContent=msg;t.style.opacity=1;clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity=0,1600);}
 
@@ -625,8 +690,10 @@ function doUpgrade(z){
 }
 function openWing(w,wi){S.wings[wi]=true;if(w.wall){w.sinking=true;}applyWings();if(w.hidden){toast('✨ 벽 너머에 '+w.gate.name+'이 나타났다!');}beep(660,0.3,'triangle',0.06);setTimeout(()=>beep(990,0.5,'triangle',0.06),200);pop(0,2.5,w.gate.z,'🔓 '+w.gate.name,'#ffc83d');toast(w.gate.name+' 개방!');save();}
 
+let lastUI=-1,UI=true;
 function update(dt){
   S.t+=dt;
+  UI=(S.t-lastUI)>=0.1;if(UI)lastUI=S.t;
   // movement
   let mx=0,mz=0;
   if(joy.active){mx=joy.dx;mz=joy.dy;}
@@ -640,6 +707,8 @@ function update(dt){
   WINGS.forEach((w,i)=>{if(w.gate&&w.gate.z!==undefined&&!S.wings[i]&&p.z<w.gate.z+0.9)p.z=w.gate.z+0.9;});
   p.x=clamp(p.x,S.wings[3]?-31.2:-15.2,S.wings[4]?31.2:15.2);
   WINGS.forEach(w=>{if(w.sinking&&w.wall){w.wall.position.y-=dt*2.5;if(w.wall.position.y<-2.2){w.wall.visible=false;w.sinking=false;}}});
+  // pyramid collision
+  if(S.cult){const pr=4.8;let dx=p.x-PYR.x,dz=p.z-PYR.z,d=Math.hypot(dx,dz);if(d<0.001){dx=0;dz=1;d=1;}if(d<pr){p.x=PYR.x+dx/d*pr;p.z=PYR.z+dz/d*pr;}}
   // instrument collision
   for(const ins of instruments){if(!ins.g.visible)continue;const dx=p.x-ins.x,dz=p.z-ins.z,d=Math.hypot(dx,dz),r=(ins.type==='sync'||ins.type==='hood'||ins.type==='gpu')?2.0:1.15;if(d<r&&d>0.001){p.x=ins.x+dx/d*r;p.z=ins.z+dz/d*r;}}
   // walk anim
@@ -669,6 +738,9 @@ function update(dt){
       pop(near.x,2.4,near.z,'+'+n+' 데이터','#fff');
     }
   }
+  // AI tower taunts
+  let nearQ=null;for(const ins of instruments){if(ins.type==='quantum'&&S.ai>0&&dist2(ins.x,ins.z)<3.6*3.6)nearQ=ins;}
+  if(nearQ){S.tauntT=(S.tauntT||0)-dt;if(S.tauntT<=0){S.tauntT=1.6;pop(nearQ.x,3.4,nearQ.z+1.5,['💬 무엄하도다 필멸자여…','💬 네 논문은 내가 쓴다','💬 h-index가 그게 뭐냐','💬 리뷰어 2도 나였다','💬 몽둥이는 내려놓아라'][ri(0,4)],'#8ff6ff');if(timers.swing<=0&&S.stamina>=5){timers.swing=0.6;S.lastSwing=S.t;player.g.rotation.y=Math.atan2(nearQ.x-p.x,nearQ.z-p.z);}}}
   // easter eggs: stand still behind a reviewer or a student
   if(!near&&!moving&&timers.swing<=0&&S.stamina>=5){
     const pc=profChars.find(c=>p.x>13.6&&Math.abs(p.z-c.g.position.z)<1.0);
@@ -696,9 +768,9 @@ function update(dt){
     if(ins.broken){
       ins.repairT-=dt;
       if(ins.repairT<=0){ins.broken=false;ins.hp=ins.def.hp;ins.repairT=0;pop(ins.x,2.4,ins.z,'🔧 수리 완료','#5ee38a');}
-      ins.el.style.display='block';ins.el.className='lab3d no';
+      if(UI){ins.el.style.display='block';ins.el.className='lab3d no';
       ins.el.innerHTML='🔧 '+ins.def.name+' 수리 중<small>'+Math.ceil(ins.repairT)+'초</small><div class="pb"><i style="width:'+Math.round((1-ins.repairT/15)*100)+'%"></i></div>';
-      projectLabel(ins.el,ins.x,2.9,ins.z);
+      }projectLabel(ins.el,ins.x,2.9,ins.z);
     }else ins.el.style.display='none';
   }
 
@@ -719,12 +791,36 @@ function update(dt){
     }else if(z.kind==='coffee'){
       const cost=5;html='☕ 커피 '+fmt(cost)+'<small>체력 회복 + 12초 가속</small>';cls=inside&&S.money>=cost&&(S.stamina<60||S.coffeeT<=0)?'ok':'no';
       if(inside&&S.stamina<60&&S.money>=cost&&S.coffeeT<=0){spend(cost);S.stamina=100;S.coffeeT=12;beep(1200,0.1,'sine',0.05);pop(p.x,2.2,p.z,'☕ 카페인!','#ff8a3d');}
+    }else if(z.kind==='cult'){
+      const avail=S.cycle>=4&&S.wings[3];
+      if(!avail){z.el.style.display='none';z.ring.visible=false;continue;}
+      z.ring.visible=true;
+      if(S.cult){const built=Math.max(0,S.accepted-S.cultBase);const want=Math.min(10,Math.floor(built/100));html='🛐 피펫 피라미드 '+want+'/10층<small>재료 = 교단 설립 후 게재 논문 100편당 1층 ('+built+'/1000) · 신도 '+cultists()+'명 · 헌금 '+fmt(cultIncome())+'/5초</small><div class="pb"><i style="width:'+Math.min(100,built/10)+'%"></i></div>';cls='no';}
+      else{const cost=3000000;html='🛐 AI 교단 설립 '+fmt(cost)+'<small>학생과 석사생이 신도가 되어 AI 신에게 피펫 피라미드를 바친다</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
+        if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;startCult();}}
+        if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}}
+    }else if(z.kind==='ai'||z.kind==='robot'){
+      const avail=S.cycle>=3&&S.wings[4];
+      if(!avail){z.el.style.display='none';z.ring.visible=false;continue;}
+      z.ring.visible=true;
+      if(z.kind==='ai'){const lv=S.ai;const cost=Math.round(2000000*Math.pow(1.8,lv));
+        if(lv>=5){html='🤖 AI 코어 Lv.MAX<small>'+aiPeriod().toFixed(1)+'초마다 데이터 3 → 논문 1 자동 채택 · 리뷰 없음</small>';cls='no';}
+        else{const nextP=6/(1+0.6*Math.max(0,lv));html=(lv===0?'🤖 AI 소환 ':'🤖 AI 강화 Lv.'+lv+'→'+(lv+1)+' ')+fmt(cost)+'<small>'+(lv===0?'AI가 리뷰 없이 6초마다 데이터 3 → 논문 1 · 단가 80%':'논문 생성 '+aiPeriod().toFixed(1)+'초 → '+nextP.toFixed(1)+'초마다 · 유지비 +$5k')+'</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
+          if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;S.ai++;summonAI();}}
+          if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}}
+      }else{const n=S.robots;const cost=Math.round(800000*Math.pow(1.5,n));
+        if(n>=4){html='🦾 로봇 4/4<small>MAX</small>';cls='no';}
+        else{html='🦾 로봇 제작 '+fmt(cost)+'<small>피로 없음 · 가방 20 · 피해 3 · 유지비 $3k/학기 ('+n+'/4)</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
+          if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;S.robots++;spawnWorker('robot');pop(z.x,2.4,z.z,'🦾 로봇 가동','#9aa4b2');beep(700,0.2,'square',0.05);save();}}
+          if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}}
+      }
     }else if(z.kind==='labcoffee'){
       const cost=80;html='☕☕ 랩 전체 커피 '+fmt(cost)+'<small>20초간 집필·리뷰·이동 전원 부스트'+(S.labCd>0?' · 재구매 '+Math.ceil(S.labCd)+'초':'')+'</small>';cls=inside&&S.money>=cost&&S.labCd<=0?'ok':'no';
       if(inside&&S.labCd<=0&&S.money>=cost){spend(cost);S.labCoffee=20;S.labCd=60;S.stamina=100;beep(1300,0.12,'sine',0.05);pop(p.x,2.2,p.z,'☕☕ 랩 전체 각성!','#ff5a1f');toast('☕☕ 랩 전체 커피 — 20초간 전원 능률 상승');}
     }else if(z.kind==='up'){
       const k=z.key,lv=S.lv[k];
-      if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'조교수':'포닥')+' 승급(논문 '+UP[k].unlock+'편) 시 개방 · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
+      if(UP[k].cycle&&S.cycle<UP[k].cycle){html='🌀 '+UP[k].name+'<small>'+UP[k].cycle+'회차부터 고용 가능</small>';cls='no';}
+      else if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'조교수':'포닥')+' 승급(논문 '+UP[k].unlock+'편) 시 개방 · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
       else if(lv>=UP[k].max){html=UP[k].icon+' '+UP[k].name+'<small>MAX</small>';cls='no';}
       else{const cost=UP[k].cost(lv);html=UP[k].icon+' '+UP[k].name+' '+fmt(cost)+'<small>'+UP[k].desc(lv)+'</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
         if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;doUpgrade(z);}}
@@ -738,7 +834,7 @@ function update(dt){
       if(inside&&hOk&&S.money>0){const chunk=Math.min(S.money,Math.max(1,gt.cost*dt*1.6),gt.cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=gt.cost-0.01){z.paid=0;openWing(w,z.wing);}}
       if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}
     }
-    z.el.style.display='block';z.el.className='lab3d '+cls;z.el.innerHTML=html;projectLabel(z.el,z.x,z.y||1.6,z.z);
+    if(UI){z.el.style.display='block';z.el.className='lab3d '+cls;if(z.el.innerHTML!==html)z.el.innerHTML=html;}projectLabel(z.el,z.x,z.y||1.6,z.z);
   }
 
   // students write
@@ -748,13 +844,13 @@ function update(dt){
   while(timers.write.length<students())timers.write.push(rnd(0,writeTime()));
   timers.write.length=students();
   for(let i=0;i<timers.write.length;i++){
-    if(S.queue<=0||S.vacT>0||S.blackout>0||S.fire){continue;}
+    if(S.cult||S.queue<=0||S.vacT>0||S.blackout>0||S.fire){continue;}
     const sc=studentChars[i%studentChars.length];const wf=(sc&&sc.whip>0)?0.5:1;
     timers.write[i]-=dt/wf;
     if(timers.write[i]<=0){timers.write[i]=writeTime();S.queue--;S.pile++;refreshPiles();const c=studentChars[i%studentChars.length];if(c)fly(new THREE.Vector3(c.g.position.x,1.3,c.g.position.z),new THREE.Vector3(-10.5,1.2,1.2),paperMatY,null,0.4);}
   }
   // typing anim
-  studentChars.forEach((c,i)=>{if(c.whip>0)c.whip-=dt;if(S.fire){c.g.position.y=Math.abs(Math.sin(S.t*14+i))*0.2;c.la.rotation.x=-2.8;c.ra.rotation.x=-2.8;return;}c.g.position.y=0;const busy=S.queue>0&&S.vacT<=0&&S.blackout<=0;c.la.rotation.x=busy?-1.2+Math.sin(S.t*18+i)*0.25:0;c.ra.rotation.x=busy?-1.2+Math.cos(S.t*18+i)*0.25:0;});
+  studentChars.forEach((c,i)=>{if(c.whip>0)c.whip-=dt;if(S.cult){const a=S.t*0.8+i*(TAU/Math.max(1,studentChars.length));const tx=PYR.x+Math.cos(a)*6.2,tz=PYR.z+Math.sin(a)*6.2;const q=c.g.position;const dx=tx-q.x,dz=tz-q.z,dd=Math.hypot(dx,dz);const st=Math.min(dd,4.5*dt);if(dd>0.05){q.x+=dx/dd*st;q.z+=dz/dd*st;}c.g.rotation.y=Math.atan2(dx,dz);c.g.position.y=Math.abs(Math.sin(S.t*8+i))*0.2;c.la.rotation.x=-2.4;c.ra.rotation.x=-2.4;return;}if(!c.home)c.home={x:c.g.position.x,z:c.g.position.z};c.g.position.x=c.home.x;c.g.position.z=c.home.z;c.g.rotation.x=0;if(S.ai>0&&S.queue<=0){c.g.rotation.y+=dt*3;c.g.position.y=Math.abs(Math.sin(S.t*5+i))*0.25;c.la.rotation.x=-2.5;c.ra.rotation.x=-2.5;return;}c.g.rotation.y=Math.PI;if(S.fire){c.g.position.y=Math.abs(Math.sin(S.t*14+i))*0.2;c.la.rotation.x=-2.8;c.ra.rotation.x=-2.8;return;}c.g.position.y=0;const busy=S.queue>0&&S.vacT<=0&&S.blackout<=0;c.la.rotation.x=busy?-1.2+Math.sin(S.t*18+i)*0.25:0;c.ra.rotation.x=busy?-1.2+Math.cos(S.t*18+i)*0.25:0;});
   // reviewers
   while(timers.review.length<reviewers())timers.review.push(rnd(0,7));
   timers.review.length=reviewers();
@@ -772,7 +868,8 @@ function update(dt){
         else if(nr<0.03){v*=5;S.natures++;pop(from.x-1,3,from.z,'✨ Nature 자매지!','#ffb3ff');startParty('sister');}
         else pop(from.x-1,2.6,from.z,'✅ ACCEPT','#5ee38a');
         coin(from,'player',()=>{S.money+=v;pop(p.x,2.4,p.z,'+'+fmt(v),'#ffc83d');beep(1500,0.08,'sine',0.05);});
-        const tt=title();if(S.accepted===70){toast('🎉 정년보장! 정교수 승진');}else if(S.accepted===10){toast('🎓 포닥 승급! 왼쪽 초록 패드에서 석사생·박사생 고용 가능');}else if(TITLES.some(([h,n])=>h===S.accepted)){toast('🎓 승급: '+tt);beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
+        const tt=title();if(S.accepted===70){toast('🎉 정년보장! 정교수 승진');}
+        if(S.accepted>=70&&S.cycle===1&&!S.profT){S.profT=S.playT;submitTime('prof',S.profT);toast('⏱ 정교수 도달 '+hms(S.profT)+' — 랭킹 등록');}else if(S.accepted===10){toast('🎓 포닥 승급! 왼쪽 초록 패드에서 석사생·박사생 고용 가능');}else if(TITLES.some(([h,n])=>h===S.accepted)){toast('🎓 승급: '+tt);beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
         save();
       }else{
         S.rejected++;pop(from.x-1,2.6,from.z,'❌ REJECT · 재작성','#ff5f6d');beep(180,0.2,'sawtooth',0.05);
@@ -802,7 +899,7 @@ function update(dt){
 
   // semester / teaching
   S.semT-=dt;
-  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 학기 종료 · 강의료 +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0){toast('💸 인건비 '+fmt(pay)+' 지급 — 잔고 부족! 다음 학기까지 갚지 못하면 파산');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 학기말 인건비 '+fmt(pay)+' 지급');if(S.debtT)S.debtT=0;}
+  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 학기 종료 · 강의료 +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0&&!EASY()){gameOver('bankrupt');return;}if(S.money<0){S.money=0;toast('💸 인건비 '+fmt(pay)+' 지급 — 잔고 부족! 다음 학기까지 갚지 못하면 파산');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 학기말 인건비 '+fmt(pay)+' 지급');if(S.debtT)S.debtT=0;}
   if(S.money<0&&S.debtT>=2&&!EASY()){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
   if(S.accepted>=20){S.call={t:50};toast('📜 과제 공고 시작 — 50초 안에 🏛에서 지원');beep(1100,0.15,'square',0.05);}save();}
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 과제 공고 마감');}}
@@ -815,33 +912,42 @@ function update(dt){
   updateFlood(dt);
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 화재 발생! 모두 소화기를 들어라'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};beep(80,0.8,'sawtooth',0.07);}}
-  updateFire(dt);updateBlackout(dt);
+  updateAI(dt);updateCult(dt);updateFire(dt);updateBlackout(dt);
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ 휴가 끝 — 다시 출근');}
   if(S.semT<20&&S.semT+dt>=20&&S.money<payroll())toast('⚠️ 20초 뒤 인건비 '+fmt(payroll())+' — 잔고 부족!');
   if(S.semCd>0)S.semCd-=dt;if(S.labCd>0)S.labCd-=dt;if(S.labCoffee>0)S.labCoffee-=dt;if(S.bonusCd>0)S.bonusCd-=dt;
   if(S.bonusT>0){S.bonusT-=dt;if(S.bonusT<=0){S.slumpT=15;toast('😮‍💨 수당 효과 끝 — 15초간 번아웃');}}else if(S.slumpT>0)S.slumpT-=dt;
   if(S.collabCd>0)S.collabCd-=dt;
   if(S.collab){S.collab.t-=dt;if(S.collab.t<=0){const c=COLLABS[S.collab.k];const v=paperValue()*c.papers;S.accepted+=c.papers;S.money+=v;if(c.acc){S.collabBonus=Math.min(0.05,S.collabBonus+c.acc);}toast('🤝 '+c.name+' 공동연구 완료! 논문 +'+c.papers+'편 · +'+fmt(v)+(c.acc?' · 채택률 +1%p 영구':''));beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);S.collab=null;save();}}
+  if(S.lv.counsel>0&&!EASY()){S.counselT=(S.counselT||0)+dt;if(S.counselT>2){S.counselT=0;const af=avgFat();if(af>=70||S.wfat>=85||workers.some(w=>w.fat>=85)){if(S.dinnerCd<=0&&S.money>=dinnerCost()){deptAction('dinner');toast('🧑‍⚕️ 상담사: 회식 자동 개최');}else if(S.vacCd<=0&&S.vacT<=0&&(af>=85||workers.some(w=>w.fat>=92))){deptAction('vac');toast('🧑‍⚕️ 상담사: 휴가 자동 실행');}}}}
+  if(S.lv.admin2>0){S.admin2T=(S.admin2T||0)+dt;if(S.admin2T>3){S.admin2T=0;
+    if(!S.teach&&S.semT>60)S.teach=true;
+    if(!S.buff&&S.semCd<=0&&S.money>=semCost()*4){deptAction('sem',S.queue>20?'data':'accept');}
+    if(S.bonusCd<=0&&S.bonusT<=0&&S.slumpT<=0&&S.money>=bonusCost()*6&&avgFat()<40)deptAction('bonus');
+    if(!S.collab&&S.collabCd<=0&&S.queue>=15&&S.money>=COLLABS.intl.cost*3)deptAction('collab','intl');}}
+  if(S.lv.recruit>0){S.recruitT=(S.recruitT||0)+dt;if(S.recruitT>2){S.recruitT=0;const tryHire=(k,mult)=>{const lv=S.lv[k];if(lv>=UP[k].max)return false;if(UP[k].unlock&&S.accepted<UP[k].unlock)return false;const cost=UP[k].cost(lv);if(S.money-cost<payroll()*2)return false;S.money-=cost;S.lv[k]++;if(k==='student')layoutStudents();if(k==='reviewer')layoutProfs();if(k==='ms'||k==='phd'||k==='pd')spawnWorker(k);toast('🧑‍💼 채용 담당자: '+UP[k].name);save();return true;};
+    tryHire('student')||tryHire('reviewer')||tryHire('ms')||tryHire('phd')||tryHire('pd');}}
   if(S.lv.admin>0&&S.call&&!S.grant){S.adminT=(S.adminT||0)+dt;if(S.adminT>3){S.adminT=0;let pick=-1;GRANTS.forEach((g,i)=>{if(grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost)pick=i;});if(pick>=0){const g=GRANTS[pick];spend(g.cost);S.grant={tier:pick,t:g.t};toast('🗂️ 행정직원이 '+g.name+' 제안서를 제출했다');beep(1000,0.1,'triangle',0.04);}}}
   if(S.buff){S.buff.t-=dt;if(S.buff.t<=0)S.buff=null;}
   if(S.grant){S.grant.t-=dt;if(S.grant.t<=0){const g=GRANTS[S.grant.tier];const pr=grantProb(g);
-    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;S.won[S.grant.tier]=true;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;if(!S.wings[4]&&!EASY()){openWing(WINGS[4],4);}const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 국가과제 효과: 석사 '+addMs+'명 · 박사 '+addPhd+'명 대량 채용 · 데이터센터 개방!'),1800);}toast('🎉 '+g.name+' 선정! +'+fmt(rw)+' · 논문 단가 +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
+    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;S.won[S.grant.tier]=true;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 국가과제 효과: 석사 '+addMs+'명 · 박사 '+addPhd+'명 대량 채용!'),1800);}toast('🎉 '+g.name+' 선정! +'+fmt(rw)+' · 논문 단가 +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
     else{toast('😞 '+g.name+' 탈락… 다음 기회에');beep(180,0.3,'sawtooth',0.05);}
     S.grant=null;save();}}
   if(!S.ended&&S.accepted>=70&&S.national&&S.wings[2]){S.ended=true;save();recordRun('노벨상');showEnding();}
   if(S.money>S._lastMoney){S.earned+=S.money-S._lastMoney;}S._lastMoney=S.money;
-  if(!S.final&&S.earned>=1e8){S.final=true;save();recordRun('연구의 신');showFinal();}
+  if(!S.final&&S.earned>=1e8*S.cycle){S.final=true;S.nextFinal=S.earned+5e8;save();recordRun('연구의 신');showFinal();}
+  else if(S.final&&S.cycle>=4&&S.earned>=S.nextFinal){S.nextFinal=S.earned+5e8;save();recordRun('연구의 신 +'+fmt(S.earned));showFinal();}
   updateWorkers(dt);
   updateParty(dt);
   updateGuide();
   timers.save-=dt;if(timers.save<=0){timers.save=5;save();}
   // HUD
-  $('money').textContent=fmt(S.money);
+  if(UI){$('money').textContent=fmt(S.money);
   $('carry').textContent='📄 데이터 '+S.data+' · 📝 초고 '+S.drafts+' / '+cap();
-  $('rank').textContent=(EASY()?'🌱 ':'')+S.labName+' · '+title()+' · 논문 '+S.accepted+'편 · 리젝 '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚강의중':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸수당'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨번아웃'+Math.ceil(S.slumpT)+'s':'');
+  $('rank').textContent=(S.dev?'🛠 ':'')+(EASY()?'🌱 ':'')+(S.cycle>1?S.cycle+'회차 · ':'')+S.labName+' · '+title()+' · 논문 '+S.accepted+'편 · 리젝 '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚강의중':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸수당'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨번아웃'+Math.ceil(S.slumpT)+'s':'');
   const elig=S.call&&!S.grant&&GRANTS.some(g=>S.accepted>=g.need&&S.money>=g.cost);
   $('dept').classList.toggle('blink',!!elig);$('deptArrow').classList.toggle('on',!!elig&&!deptOpen);if(elig)$('deptArrow').textContent='📜 과제 공고 '+mmss(S.call.t)+' ➜';
-  $('stamFill').style.width=S.stamina+'%';$('stamLab').textContent=S.coffeeT>0?'☕ 카페인 '+Math.ceil(S.coffeeT)+'초':(S.stamina<5?'지침 — 커피가 필요해':'체력');
+  $('stamFill').style.width=S.stamina+'%';$('stamLab').textContent=S.coffeeT>0?'☕ 카페인 '+Math.ceil(S.coffeeT)+'초':(S.stamina<5?'지침 — 커피가 필요해':'체력');}
 }
 const _v=new THREE.Vector3();
 function projectLabel(el,x,y,z){_v.set(x,y,z).project(camera);const w=cv.clientWidth,h=cv.clientHeight;const sx=(_v.x+1)/2*w,sy=(1-_v.y)/2*h;if(_v.z>1||sx<-100||sx>w+100||sy<-50||sy>h+50){el.style.display='none';return;}el.style.left=sx+'px';el.style.top=sy+'px';}
@@ -854,7 +960,7 @@ const grantOk=i=>i===0||S.won[i-1];
 const semCost=()=>Math.round(12000+S.accepted*300);
 const COLLABS={dom:{name:'국내 대학',cost:8000,data:8,t:45,papers:1},intl:{name:'해외 대학',cost:30000,data:15,t:60,papers:2,acc:0.01}};
 const bonusCost=()=>(students()+workers.length)*1500;
-const payroll=()=>students()*1000+S.lv.ms*2000+S.lv.phd*3000+S.lv.pd*5000+S.lv.admin*4000+S.wings.filter(Boolean).length*2000;
+const payroll=()=>students()*1000+S.lv.ms*2000+S.lv.phd*3000+S.lv.pd*5000+S.lv.admin*4000+S.lv.counsel*6000+S.lv.admin2*6000+S.robots*3000+S.ai*5000+S.wings.filter(Boolean).length*2000;
 const dinnerCost=()=>(students()+workers.length)*300;
 const avgFat=()=>{const a=[S.wfat,...workers.map(w=>w.fat||0)];return a.reduce((x,y)=>x+y,0)/a.length;};
 let HOF=[];try{HOF=JSON.parse(localStorage.getItem('lab_hof')||'[]');}catch(e){}
@@ -902,6 +1008,20 @@ function showStatus(){
       '<small>기준: 한국시간(KST) · 방문 = 페이지 로드 · 기기 = 브라우저별 익명 ID · IP나 이름은 수집하지 않음</small>';
   }).catch(()=>{$('statusBody').innerHTML='<small>서버에 연결할 수 없습니다. visits 테이블 SQL을 실행했는지 확인하세요.</small>';});
 }
+const hms=t=>{t=Math.max(0,Math.floor(t));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),sec=t%60;return (h?h+':':'')+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');};
+async function submitTime(kind,seconds){
+  if(EASY()||S.dev||!seconds)return;
+  try{await fetch(SUPA_URL+'/rest/v1/times',{method:'POST',headers:Object.assign({'Prefer':'return=minimal'},supaHeaders),body:JSON.stringify({lab_name:S.labName||'우리 연구실',kind,seconds:Math.round(seconds),papers:S.accepted,cycle:S.cycle})});}catch(e){}
+}
+async function fetchTimes(kind){
+  const r=await fetch(SUPA_URL+'/rest/v1/times?select=lab_name,kind,seconds,papers,cycle,created_at&kind=eq.'+kind+'&order=seconds.asc&limit=200',{headers:supaHeaders});
+  if(!r.ok)throw new Error(r.status);const rows=await r.json();const best={};for(const x of rows){if(!best[x.lab_name])best[x.lab_name]=x;}
+  return Object.values(best).sort((a,b)=>a.seconds-b.seconds).slice(0,10);
+}
+function timesHtml(rows,kind){
+  if(!rows.length)return '<small>아직 기록이 없습니다 — '+(kind==='prof'?'1회차에서 정교수(논문 70편)에 도달하면':'피라미드 10층을 완성하면')+' 자동 등록</small>';
+  return rows.map((e,i)=>'<div class="hofrow'+(i<3?' rank'+(i+1):'')+'">'+(i<3?'<span class="medal">'+['🥇','🥈','🥉'][i]+'</span>':'<span class="num">'+(i+1)+'</span>')+'<div><b>'+String(e.lab_name).replace(/[<>]/g,'')+(i===0?' 👑':'')+'</b><br><small>⏱ '+hms(e.seconds)+(kind==='loop'?' · 회귀 '+e.cycle+'회차':'')+'</small></div></div>').join('');
+}
 function globalHtml(rows){
   if(!rows.length)return '<small>아직 기록이 없습니다 — 첫 번째 연구실이 되어보세요</small>';
   return rows.map((e,i)=>'<div class="hofrow'+(i<3?' rank'+(i+1):'')+'">'+(i<3?'<span class="medal">'+['🥇','🥈','🥉'][i]+'</span>':'<span class="num">'+(i+1)+'</span>')+'<div><b>'+String(e.lab_name).replace(/[<>]/g,'')+(i===0?' 👑':'')+'</b><br><small>'+Number(e.score).toLocaleString()+'점 · 논문 '+e.papers+' · 졸업생 '+e.alumni+' · '+fmt(e.earned)+' · '+String(e.ending).replace(/[<>]/g,'')+'</small></div></div>').join('');
@@ -910,21 +1030,21 @@ function recordRun(end){
   const e={name:S.labName||'우리 연구실',papers:S.accepted,alumni:S.alumni,earned:Math.floor(S.earned),natures:S.natures,end,date:new Date().toISOString().slice(0,10)};
   e.score=e.papers*10+e.alumni*50+Math.floor(e.earned/10000)+e.natures*300;
   HOF.push(e);HOF.sort((a,b)=>b.score-a.score);HOF=HOF.slice(0,10);try{localStorage.setItem('lab_hof',JSON.stringify(HOF));}catch(err){}
-  if(!EASY())submitScore(e);
+  if(!EASY()&&!S.dev)submitScore(e);
 }
 function hofHtml(){
   if(!HOF.length)return '<small>아직 기록 없음 — 엔딩·파산·안식년 시점의 성적이 기록됩니다</small>';
   return HOF.map((e,i)=>'<div class="hofrow">'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' <b>'+e.name+'</b> <small>'+e.score.toLocaleString()+'점 · 논문 '+e.papers+' · 졸업생 '+e.alumni+' · '+fmt(e.earned)+' · '+e.end+'</small></div>').join('');
 }
 function hardReload(){try{location.replace(location.pathname+location.search);}catch(e){location.reload();}}
-function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
-function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}restartGame();}
+function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
+function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}restartGame();}
 function gameOver(kind){
   if(S.gameover)return;S.gameover=kind;S.running=false;lockRun();recordRun(kind==='bankrupt'?'파산':kind==='overwork'?'과로':kind==='exodus'?'학생 도주':'종료');
   const lab=S.labName||'우리 연구실';
   $('goTitle').textContent=kind==='bankrupt'?'💸 파산 — 연구실 폐쇄':kind==='overwork'?'😵 과로 — 연구실 해체':kind==='exodus'?'🏃 학생 전원 도주 — 지도 자격 박탈':'🏁 연구실 운영 종료';
   $('goBody').innerHTML=(kind==='exodus'?'<p>'+lab+'의 집필 학생이 한 명도 남지 않았습니다.<br>몽둥이로 학생을 다스리던 교수는 학과 징계를 받았습니다.</p><p class="sub">학생을 때릴수록 불만이 쌓이고 도주 확률이 올라갑니다. 회식으로 달래세요.</p>':kind==='quit'?'<p>'+lab+'의 운영을 여기서 마칩니다.<br>기록은 명예의 전당에 남았습니다.</p>':kind==='bankrupt'
-    ?'<p>'+lab+'이 두 학기 연속 인건비를 주지 못했습니다.<br>학생들은 다른 랩으로 떠났고 장비는 압류됐습니다.</p><p class="sub">고정비는 학기말마다 나갑니다. 🏛 탭에서 다음 인건비를 미리 확인하세요.</p>'
+    ?'<p>'+lab+'이 학기말 인건비를 주지 못해 잔고가 마이너스가 됐습니다.<br>학생들은 다른 랩으로 떠났고 장비는 압류됐습니다.</p><p class="sub">고정비는 학기말마다 나갑니다. 🏛 탭에서 다음 인건비를 미리 확인하세요.</p>'
     :'<p>'+lab+'에서 연구원 네 명이 과로로 떠났습니다.<br>노동청 신고 두 번 뒤에도 바뀐 게 없어 연구실은 해체됐습니다.</p><p class="sub">피로도는 🏛 탭에서 보이고 회식과 휴가로 내릴 수 있습니다.</p>')+
     '<p class="sub">논문 '+S.accepted+'편 · 졸업생 '+S.alumni+'명 · 누적 연구비 '+fmt(S.earned)+'</p>';
   $('goBox').classList.remove('hidden');
@@ -962,8 +1082,8 @@ function renderDept(){
   h+='<div class="sec"><b>👥 랩 구성원</b> · 졸업생 '+S.alumni+'명(단가 +'+S.alumni*2+'%)'+(S.sabb?' · 안식년 '+S.sabb+'회(수익 +'+S.sabb*25+'%)':'')+'<br>';
   if(!workers.length)h+='<small>고용된 석박사생 없음'+(S.accepted<15?' — 포닥 승급 후 고용 가능':'')+'</small>';
   h+='<small>⌨️ 집필 학생 '+students()+'명 — 피로 '+Math.round(S.wfat)+'% · 불만 '+Math.round(S.grudge)+'%</small><br>';
-  workers.forEach(w=>{h+='<small>'+(w.kind==='ms'?'🧑‍🔬 석사생':w.kind==='phd'?'🎓 박사생':'🥼 포닥')+' — 피로 '+Math.round(w.fat)+'% · '+(w.kind==='pd'?'임용까지 ':'졸업까지 ')+mmss(w.grad-w.exp)+'</small><br>';});
-  if(S.lv.admin>0)h+='<small>🗂️ 행정직원 — 과제 공고 자동 지원</small><br>';
+  workers.forEach(w=>{if(w.kind==='robot'){h+='<small>🦾 로봇 — 피로 없음</small><br>';return;}h+='<small>'+(w.kind==='ms'?'🧑‍🔬 석사생':w.kind==='phd'?'🎓 박사생':'🥼 포닥')+' — 피로 '+Math.round(w.fat)+'% · '+(w.kind==='pd'?'임용까지 ':'졸업까지 ')+mmss(w.grad-w.exp)+'</small><br>';});
+  if(S.lv.admin>0)h+='<small>🗂️ 행정직원 — 과제 공고 자동 지원</small><br>';if(S.lv.counsel>0)h+='<small>🧑‍⚕️ 상담사 — 회식·휴가 자동</small><br>';if(S.lv.admin2>0)h+='<small>🗃️ 행정직원 2 — 강의·세미나·수당·코웍 자동</small><br>';if(S.lv.recruit>0)h+='<small>🧑‍💼 채용 담당자 — 인원 자동 채용</small><br>';
   h+='</div>';
   $('deptBody').innerHTML=h;
 }
@@ -975,7 +1095,7 @@ function deptAction(a,k){
   else if(a==='bonus'){if(S.bonusCd>0||S.bonusT>0||S.slumpT>0||!spend(bonusCost()))return;S.bonusT=25;S.bonusCd=90;toast('💸 연구수당 지급! 25초간 전원 능률 급상승');beep(1200,0.15,'triangle',0.05);}
   else if(a==='collab'){const c=COLLABS[k];if(S.collab||S.collabCd>0||S.queue<c.data||!spend(c.cost))return;S.queue-=c.data;refreshPiles();S.collab={k,t:c.t};S.collabCd=90;toast('🤝 '+c.name+' 교수에게 데이터 전달 — '+c.t+'초 뒤 결과');}
   else if(a==='grant'){const g=GRANTS[k];if(!S.call||S.grant||!grantOk(+k)||S.accepted<g.need||!spend(g.cost))return;S.grant={tier:+k,t:g.t};toast('📜 '+g.name+' 제안서 제출 — '+g.t+'초 뒤 결과');}
-  save();renderDept();
+  save();if(deptOpen)renderDept();
 }
 $('deptBody').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;deptAction(b.dataset.a,b.dataset.k);});
 $('dept').addEventListener('click',()=>{deptOpen=true;renderDept();$('deptBox').classList.remove('hidden');});
@@ -984,9 +1104,12 @@ deptTimer=setInterval(()=>{if(deptOpen)renderDept();},1000);
 function showFinal(){
   S.running=false;
   const lab=S.labName||'우리 연구실';
+  $('finalHead').textContent='🌌 이번 회차 연구비 '+fmt(S.earned>=1e8*S.cycle?Math.floor(S.earned/1e8)*1e8:1e8*S.cycle)+' 달성';
+  $('btnFinalSabb').textContent=S.cycle>=4?'🏝️ 은퇴 (종료)':'🏝️ 안식년 떠나기 (종료)';$('btnFinalContinue').style.display=S.cycle>=4?'':'none';
+  $('regressNote').textContent=S.cycle>=4?'4회차부터는 $500M을 더 벌 때마다 이 화면이 다시 뜹니다 · 진엔딩은 논문 1,000편 = 피라미드 10층':'회귀하면 '+(S.cycle+1)+'회차: 조교수 · $1M · 양옆 맵 개방 · 학생 전원 이탈'+(S.cycle+1===2?' · 상담사·행정직원2 고용 가능':S.cycle+1===3?' · 데이터센터에서 AI 소환·로봇 제작':' · Wet Lab에서 AI 교단 설립 → 논문 1,000편 = 피라미드 10층이 진엔딩 · 클리어 기준 '+fmt(1e8*(S.cycle+1)));$('btnRegress').style.display=S.cycle>=4?'none':'';
   $('finalBody').innerHTML=
     '<p class="big" style="font-size:2rem">당신은 연구의 신</p>'+
-    '<p>'+lab+'의 누적 연구비가<br>1억 달러를 달성했습니다.<br>논문 '+S.accepted+'편 · 졸업생 '+S.alumni+'명 · 리젝 '+S.rejected+'번.</p>'+
+    '<p>'+lab+'이 이번 회차에<br>'+fmt(Math.max(1e8*S.cycle,Math.floor(S.earned/1e8)*1e8))+'를 벌었습니다.<br>논문 '+S.accepted+'편 · 졸업생 '+S.alumni+'명 · 리젝 '+S.rejected+'번.</p>'+
     '<p class="sub">여기까지 오는 동안 장비는 수없이 고장 났고,<br>리뷰어 2는 어김없이 나타났습니다.<br>과제는 탈락하고, 예산은 깎였습니다.<br>그래도 당신은 연구를 멈추지 않았습니다.</p>'+
     '<p class="sub">현실의 연구실에서는<br>데이터가 이렇게 쉽게 나오지도,<br>논문이 이렇게 빨리 받아들여지지도 않습니다.</p>'+
     '<p class="sub">그런 현실 속에서도 오늘 한 줄을 더 써 내려가는 당신.<br>그 꾸준함은 이 게임의 어떤 기록보다 값집니다.</p>'+
@@ -1003,18 +1126,26 @@ function showEnding(){
 }
 $('btnIntro').addEventListener('click',()=>{$('introBox').classList.add('hidden');S.running=true;last=performance.now();});
 $('btnGoRetry').addEventListener('click',resetRun);
+$('btnLoopContinue').addEventListener('click',()=>{$('loopBox').classList.add('hidden');S.running=true;last=performance.now();});
+armButton($('btnLoopNew'),resetRun);
 let rankMode='week';
 function openRank(){$('hofList').innerHTML=hofHtml();$('hofBox').classList.remove('hidden');loadRank();}
-function loadRank(){$('globalList').innerHTML='<small>불러오는 중…</small>';$('tabWeek').classList.toggle('on',rankMode==='week');$('tabAll').classList.toggle('on',rankMode!=='week');$('rankNote').textContent=rankMode==='week'?'월~일(한국시간) 기준 이번 주 최고의 연구실 · 연구실 이름 기준 최고 기록':'역대 최고 기록 · 연구실 이름 기준';(rankMode==='week'?fetchWeekTop():fetchTop()).then(rows=>{$('globalList').innerHTML=globalHtml(rows);}).catch(()=>{$('globalList').innerHTML='<small>랭킹 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.</small>';});}
+function loadRank(){$('globalList').innerHTML='<small>불러오는 중…</small>';['week','all','prof','loop'].forEach(m=>$('tab'+m[0].toUpperCase()+m.slice(1)).classList.toggle('on',rankMode===m));$('rankNote').textContent=rankMode==='week'?'월~일(한국시간) 기준 이번 주 최고의 연구실 · 연구실 이름 기준 최고 기록':rankMode==='all'?'역대 최고 기록 · 연구실 이름 기준':rankMode==='prof'?'1회차 시작부터 정교수(논문 70편)까지 걸린 실제 플레이 시간 · 짧을수록 위':'1회차 시작부터 피라미드 10층 완성까지 걸린 실제 플레이 시간 · 짧을수록 위';const pr=rankMode==='week'?fetchWeekTop():rankMode==='all'?fetchTop():fetchTimes(rankMode);pr.then(rows=>{$('globalList').innerHTML=(rankMode==='prof'||rankMode==='loop')?timesHtml(rows,rankMode):globalHtml(rows);}).catch(()=>{$('globalList').innerHTML='<small>랭킹 서버에 연결할 수 없습니다. 잠시 후 다시 시도하세요.</small>';});}
 $('btnRank').addEventListener('click',openRank);$('btnRankStart').addEventListener('click',openRank);
-$('tabWeek').addEventListener('click',()=>{rankMode='week';loadRank();});$('tabAll').addEventListener('click',()=>{rankMode='all';loadRank();});
+$('tabWeek').addEventListener('click',()=>{rankMode='week';loadRank();});$('tabAll').addEventListener('click',()=>{rankMode='all';loadRank();});$('tabProf').addEventListener('click',()=>{rankMode='prof';loadRank();});$('tabLoop').addEventListener('click',()=>{rankMode='loop';loadRank();});
 $('btnStatusClose').addEventListener('click',()=>{$('statusBox').classList.add('hidden');});
 $('btnHofClose').addEventListener('click',()=>$('hofBox').classList.add('hidden'));
 armButton($('btnQuit'),()=>{$('menuBox').classList.add('hidden');gameOver('quit');});
 $('btnFinalContinue').addEventListener('click',()=>{$('finalBox').classList.add('hidden');S.running=true;last=performance.now();});
-armButton($('btnFinalSabb'),doSabbatical);
+armButton($('btnFinalSabb'),doSabbatical);armButton($('btnRegress'),doRegress);
 $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hidden');S.running=true;last=performance.now();});
-function doSabbatical(){recordRun('안식년');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}restartGame();}
+function doRegress(){
+  recordRun('회귀 '+(S.cycle+1)+'회차');NOSAVE=true;try{localStorage.setItem('lab_flash','regress');}catch(e){}$('finalBox').classList.add('hidden');
+  const c=S.cycle+1;
+  try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:1000000,lv:{student:-1,write:2,reviewer:1,bag:2,club:2,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},ai:0,robots:0,cult:0,pyr:0,accepted:20,rejected:0,wings:[true,true,true,true,true],pile:0,queue:0,sem:1,grantBonus:0.15,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:true,labName:S.labName,natures:0,cycle:c,won:[true,true,false,false],playT:S.playT,profT:S.profT}));}catch(e){}
+  restartGame();
+}
+function doSabbatical(){recordRun('안식년');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}restartGame();}
 armButton($('btnSabb'),doSabbatical);
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
@@ -1028,7 +1159,8 @@ function importCode(code){try{const j=JSON.parse(decodeURIComponent(escape(atob(
 window.__gameStop=function(){STOPPED=true;NOSAVE=true;S.running=false;try{if(BGM.timer){clearInterval(BGM.timer);BGM.timer=null;}if(deptTimer)clearInterval(deptTimer);if(AC&&AC.close)AC.close();}catch(e){}};
 function restartGame(){NOSAVE=true;if(window.__restartGame){try{window.__restartGame();return;}catch(e){}}hardReload();}
 let last=performance.now();
-function loop(now){if(STOPPED)return;const dt=Math.min(0.05,(now-last)/1000)*0.8*SET.spd;last=now;if(S.running)update(dt);renderer.render(scene,camera);requestAnimationFrame(loop);}
+let lastRender=0;
+function loop(now){if(STOPPED)return;requestAnimationFrame(loop);if(SET.low&&now-lastRender<31)return;lastRender=now;const real=Math.min(0.08,(now-last)/1000);const dt=real*0.8*SET.spd;last=now;if(S.running){S.playT+=real;update(dt);}renderer.render(scene,camera);}
 
 function chooseMode(m){if(m!==MODE){NOSAVE=true;try{localStorage.setItem('lab_mode',m);}catch(e){}restartGame();return;}start();}
 function start(){const raw=($('labName').value||'').trim();const code=raw.toLowerCase();const cheat=code==='developer-ending'?'final':code==='developer-nobel'?'nobel':code==='developer-nature'?'nature':code==='developer-status'?'status':null;
@@ -1040,25 +1172,33 @@ $('btnSaveClose').addEventListener('click',()=>{save();toast('💾 저장됨 —
 if(/Instagram|FBAN|FBAV|KAKAOTALK|NAVER\(|Line\//i.test(navigator.userAgent||''))$('inappNote').style.display='block';
 $('modeNote').textContent=EASY()?'현재: 🌱 이지 모드 — 재난·신맵·랭킹 없이 연습':'현재: 🔥 헬조선 모드 — 정전·화재·물난리 · 신맵 · 랭킹 등록';
 $('mute').addEventListener('click',()=>{audio();setMute(!muted);});
-$('menu').addEventListener('click',()=>{S.running=false;$('volRange').value=SET.vol;$('volLab').textContent=Math.round(SET.vol*100)+'%';$('spdRange').value=SET.spd;$('spdLab').textContent=SET.spd.toFixed(1)+'x';$('saveMsg').textContent=lastSaved?'마지막 저장 '+lastSaved.toLocaleTimeString():'';$('menuStats').innerHTML='논문 '+S.accepted+'편 · 리젝 '+S.rejected+'회 · 채택률 '+Math.round(acceptRate()*100)+'%<br>학생 '+students()+'명 · 리뷰어 '+reviewers()+'명 · 가방 '+cap()+' · 몽둥이 '+dmg()+'<br>석사생 '+S.lv.ms+'명 · 박사생 '+S.lv.phd+'명 · 포닥 '+S.lv.pd+'명<br>🌟 네이처(자매지 포함) 게재 '+S.natures+'회';$('menuBox').classList.remove('hidden');});
+$('menu').addEventListener('click',()=>{S.running=false;$('volRange').value=SET.vol;$('volLab').textContent=Math.round(SET.vol*100)+'%';$('spdRange').value=SET.spd;$('spdLab').textContent=SET.spd.toFixed(1)+'x';$('lowChk').checked=SET.low;$('saveMsg').textContent=lastSaved?'마지막 저장 '+lastSaved.toLocaleTimeString():'';$('menuStats').innerHTML='논문 '+S.accepted+'편 · 리젝 '+S.rejected+'회 · 채택률 '+Math.round(acceptRate()*100)+'%<br>학생 '+students()+'명 · 리뷰어 '+reviewers()+'명 · 가방 '+cap()+' · 몽둥이 '+dmg()+'<br>석사생 '+S.lv.ms+'명 · 박사생 '+S.lv.phd+'명 · 포닥 '+S.lv.pd+'명'+(S.cycle>1?' · '+S.cycle+'회차':'')+'<br>🌟 네이처(자매지 포함) 게재 '+S.natures+'회<br>⏱ 플레이 시간 '+hms(S.playT)+(S.profT?' · 정교수 '+hms(S.profT):'')+(S.loopT?' · 완주 '+hms(S.loopT):'')+'';$('menuBox').classList.remove('hidden');});
 $('btnResume').addEventListener('click',()=>{$('menuBox').classList.add('hidden');S.running=true;last=performance.now();});
 armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem(SAVE_KEY());}catch(e){}$('menuBox').classList.add('hidden');restartGame();});
 $('volRange').addEventListener('input',e=>{SET.vol=+e.target.value;$('volLab').textContent=Math.round(SET.vol*100)+'%';if(MASTER&&!muted)MASTER.gain.setTargetAtTime(SET.vol,AC.currentTime,0.05);saveSettings();});
 $('spdRange').addEventListener('input',e=>{SET.spd=+e.target.value;$('spdLab').textContent=SET.spd.toFixed(1)+'x';saveSettings();});
+$('lowChk').addEventListener('change',e=>{SET.low=e.target.checked;saveSettings();applyQuality();resize();toast(SET.low?'🔋 저전력 모드 켜짐':'⚡ 고화질 모드 (발열 주의)');});
 $('btnExport').addEventListener('click',()=>{const code=exportCode();$('saveCode').value=code;$('saveCode').select();let ok=false;try{document.execCommand('copy');ok=true;}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>{$('saveMsg').textContent='복사됨 — 메모에 붙여넣어 보관하세요';}).catch(()=>{$('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});else $('saveMsg').textContent=ok?'복사됨':'아래 코드를 길게 눌러 복사하세요';});
 function devCommand(c){
   c=c.trim().toLowerCase();if(!c.startsWith('developer-'))return false;
-  const k=c.slice(10);$('menuBox').classList.add('hidden');S.running=true;last=performance.now();
+  const k=c.slice(10);if(!S.dev){S.dev=true;save();toast('🛠 개발자 모드 — 이 저장은 랭킹에 등록되지 않습니다');}$('menuBox').classList.add('hidden');S.running=true;last=performance.now();
   if(k==='nature')startParty('nature');else if(k==='sister')startParty('sister');
   else if(k==='fire'){if(!S.fire)startFire();}
   else if(k==='dark'||k==='blackout'){S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};}
   else if(k==='flood')startFlood();
   else if(k==='ending')showFinal();else if(k==='nobel')showEnding();else if(k==='status'){S.running=false;showStatus();}
-  else if(k==='money'){S.money+=1000000;toast('💰 +$1M');}
+  else if(k==='money'){S.money+=50000000;toast('💰 +$50M');}
+  else if(/^money\d+$/.test(k)){const m=+k.slice(5)*1e6;S.money+=m;toast('💰 +'+fmt(m));}
+  else if(k==='cycle2'||k==='cycle3'||k==='cycle4'){S.cycle=+k.slice(5);S.wings=[true,true,true,true,true];applyWings();S.deptIntro=true;if(S.accepted<20)S.accepted=20;toast('🌀 '+S.cycle+'회차로 설정 — 양옆 맵 개방');}
+  else if(/^ending[1-4]$/.test(k)){S.cycle=+k.slice(6);S.wings=[true,true,true,true,true];applyWings();S.earned=Math.max(S.earned,1e8*S.cycle);S.final=true;S.nextFinal=S.earned+5e8;showFinal();}
+  else if(k==='loop'){S.cycle=4;S.wings=[true,true,true,true,true];applyWings();if(!S.cult)startCult();S.accepted=S.cultBase+1000;S.loop=true;showLoop();}
+  else if(k==='cult'){if(S.cycle<4)S.cycle=4;S.wings=[true,true,true,true,true];applyWings();if(!S.cult)startCult();}
+  else if(k==='pyramid'){if(!S.cult){S.cycle=4;S.wings=[true,true,true,true,true];applyWings();startCult();}S.accepted=S.cultBase+900;toast('🔺 교단 설립 후 논문 900편 — 9층 완성 상태');}
   else if(k==='papers'){S.accepted+=10;toast('📄 논문 +10');}
+  else if(/^paper\d+$/.test(k)){S.accepted=+k.slice(5);toast('📄 논문 '+S.accepted+'편으로 설정');}
   else if(k==='call'){S.call={t:50};toast('📜 공고 강제 개시');}
   else if(k==='open'){[1,2,3,4].forEach(i=>{if(!S.wings[i])openWing(WINGS[i],i);});}
-  else if(k==='hire'){['ms','ms','phd','pd'].forEach(x=>{S.lv[x]++;spawnWorker(x);});S.lv.admin=1;spawnAdmin();}
+  else if(k==='hire'){['student','write','reviewer','bag','club'].forEach(x=>{S.lv[x]=UP[x].max;});layoutStudents();layoutProfs();['ms','phd','pd'].forEach(x=>{while(S.lv[x]<UP[x].max){S.lv[x]++;spawnWorker(x);}});S.lv.admin=1;spawnAdmin();if(S.cycle>=2){S.lv.counsel=1;S.lv.admin2=1;}if(S.cycle>=3){S.lv.recruit=1;while(S.robots<4){S.robots++;spawnWorker('robot');}if(S.ai<1){S.ai=1;summonAI();}}toast('🛠 채용 가능한 전원 소환');}
   else{toast('❓ 알 수 없는 개발자 명령: '+k);return true;}
   toast('🛠 '+c);return true;
 }
@@ -1067,8 +1207,10 @@ armButton($('btnImport'),()=>{if(devCommand($('saveCode').value)){$('saveCode').
 $('verNote').textContent='v'+VERSION;logVisit();let FLASH='';try{FLASH=localStorage.getItem('lab_flash')||'';if(FLASH)localStorage.removeItem('lab_flash');}catch(e){}$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}restartGame();});
 if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[이지] ':'[헬조선] ')+'저장된 진행 상황을 불러왔습니다 — 논문 '+S.accepted+'편 · '+fmt(S.money);}
 if(FLASH==='sabb')$('saveNote').textContent='🏝️ 안식년에서 복귀 — 새 연구실 시작 · 졸업생 보너스 유지';
+if(FLASH==='regress'){setTimeout(()=>{start();toast('🌀 '+S.cycle+'회차 시작 — "내가 대학원생일 땐 말이야…"');},80);}
+if(FLASH==='regress')$('saveNote').textContent='🌀 '+S.cycle+'회차 — 조교수 · $1M · 양옆 맵 개방 · 학생 없음. "내가 대학원생일 땐 말이야…"'+(S.cycle>=4?' · Wet Lab에서 🛐 AI 교단 설립 가능':S.cycle>=3?' · 데이터센터에서 🤖 AI 소환·🦾 로봇 제작 가능':'');
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
-for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');if(S.lv.admin>0)spawnAdmin();
+for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');for(let i=0;i<S.robots;i++)spawnWorker('robot');if(S.lv.admin>0)spawnAdmin();
 camera.position.set(0,21,19.5);camera.lookAt(0,0.5,1.5);
 requestAnimationFrame(loop);
 })();
@@ -1128,7 +1270,7 @@ requestAnimationFrame(loop);
   </div>
   <div id="hofBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
     <h1 style="font-size:1.6rem">🏆 Rankings</h1>
-    <div class="tabs"><button class="tab on" id="tabWeek">This week</button><button class="tab" id="tabAll">All-time</button></div>
+    <div class="tabs"><button class="tab on" id="tabWeek">This week</button><button class="tab" id="tabAll">All-time</button><button class="tab" id="tabProf">🎓 Professor</button><button class="tab" id="tabLoop">🔺 Tier Loop</button></div>
     <div class="dept"><div class="sec" id="globalList"><small>Loading…</small></div><small id="rankNote">Best labs this week (Mon–Sun, KST) · one entry per lab name</small>
     <div class="sec" style="margin-top:14px"><b>📱 This device</b><div id="hofList"></div></div></div>
     <button class="btn" id="btnHofClose">Close</button>
@@ -1138,15 +1280,23 @@ requestAnimationFrame(loop);
     <div class="dept" id="statusBody"></div>
     <button class="btn" id="btnStatusClose">Close</button>
   </div>
+  <div id="loopBox" class="overlay hidden">
+    <h1 style="font-size:1.6rem">🔺 Tier Pyramid complete</h1>
+    <div id="loopBody" style="max-width:24em"></div>
+    <button class="btn" id="btnLoopContinue">Keep running the lab</button>
+    <button class="btn" id="btnLoopNew" style="background:#b388ff;box-shadow:0 6px 0 #6a4fb0;color:#fff">🔁 Back to cycle 1 (ends this run)</button>
+  </div>
   <div id="goBox" class="overlay hidden">
     <h1 id="goTitle" style="font-size:1.7rem"></h1>
     <div id="goBody" style="max-width:24em"></div>
-    <button class="btn" id="btnGoRetry">Try again (alumni bonus kept)</button>
+    <button class="btn" id="btnGoRetry">Try again</button>
   </div>
   <div id="finalBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(40px + env(safe-area-inset-top,0px))">
-    <h1 style="font-size:1.4rem;opacity:.8">🌌 $100M total funding reached</h1>
+    <h1 style="font-size:1.4rem;opacity:.8" id="finalHead">🌌 Funding milestone reached</h1>
     <div id="finalBody"></div>
     <button class="btn" id="btnFinalContinue">Keep running the lab</button>
+    <button class="btn" id="btnRegress" style="background:#b388ff;box-shadow:0 6px 0 #6a4fb0;color:#fff">🌀 Cycle Regress — "Back when I was a grad student…"</button>
+    <p class="sub" id="regressNote"></p>
     <button class="btn" id="btnFinalSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ Take a sabbatical (ends this run)</button>
   </div>
   <div id="endBox" class="overlay hidden">
@@ -1157,12 +1307,13 @@ requestAnimationFrame(loop);
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ Take a sabbatical (ends this run)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.1.3</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.6.4</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ Settings</b><br>
         <label>🔊 Volume <span id="volLab">100%</span><input type="range" id="volRange" min="0" max="1" step="0.05" value="1"></label>
         <label>⏩ Game speed <span id="spdLab">1.0x</span><input type="range" id="spdRange" min="1" max="2" step="0.1" value="1"></label>
+        <label><input type="checkbox" id="lowChk"> 🔋 Low-power mode <small>less heat · 30fps · lower resolution (default on mobile)</small></label>
       </div>
       <div class="sec"><b>💾 Save</b> <small id="saveMsg"></small><br>
         <small>Autosave stays on this device and browser. Copy the save code to move to another device.</small>
@@ -1182,15 +1333,15 @@ if(!window.THREE){document.getElementById('saveNote').textContent='Could not loa
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.1.3';const LANG='en';
+const VERSION='2.6.4';const LANG='en';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
 let AC=null,MASTER=null,muted=false;
-const SET={vol:1,spd:1};let STOPPED=false;let deptTimer=null;
+const SET={vol:1,spd:1,low:true};let STOPPED=false;let deptTimer=null;
 let MODE='hard';try{MODE=localStorage.getItem('lab_mode')==='easy'?'easy':'hard';if(!localStorage.getItem('lab_save_hard')&&localStorage.getItem('lab_save_en')){localStorage.setItem('lab_save_hard',localStorage.getItem('lab_save_en'));}}catch(e){}
 const SAVE_KEY=()=>'lab_save_'+MODE;const EASY=()=>MODE==='easy';
-try{muted=localStorage.getItem('lab_mute_en')==='1';const j=JSON.parse(localStorage.getItem('lab_settings_en')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);}}catch(e){}
+try{muted=localStorage.getItem('lab_mute_en')==='1';const j=JSON.parse(localStorage.getItem('lab_settings_en')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);if(typeof j.low==='boolean')SET.low=j.low;}}catch(e){}
 function saveSettings(){try{localStorage.setItem('lab_settings_en',JSON.stringify(SET));}catch(e){}}
 function audio(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=muted?0:SET.vol;MASTER.connect(AC.destination);}catch(e){}return AC;}
 function beep(f,d,type,g){try{if(!audio())return;if(AC.state==='suspended')AC.resume();const o=AC.createOscillator(),v=AC.createGain();o.type=type||'square';o.frequency.value=f;v.gain.value=g||0.04;o.connect(v);v.connect(MASTER);o.start();v.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.08));o.stop(AC.currentTime+(d||0.08));}catch(e){}}
@@ -1207,21 +1358,24 @@ function setMute(m){muted=m;try{localStorage.setItem('lab_mute_en',m?'1':'0');}c
 
 /* ---------------- game state ---------------- */
 const UP={
-  student:{name:'Hire Writer',icon:'🧑‍🎓',cost:l=>Math.round(6000*Math.pow(1.65,l)),max:8,desc:l=>'Writers '+(1+l)+' → '+(2+l)+''},
+  student:{name:'Hire Writer',icon:'🧑‍🎓',cost:l=>Math.round(6000*Math.pow(1.65,l)),get max(){return 8+(S.cycle-1)*2;},desc:l=>'Writers '+(1+l)+' → '+(2+l)+''},
   write:{name:'Writing Speed',icon:'⌨️',cost:l=>Math.round(9000*Math.pow(1.7,l)),max:6,desc:l=>'Lv '+l+' → '+(l+1)},
   reviewer:{name:'Reviewer Professor',icon:'🧑‍🏫',cost:l=>Math.round(16000*Math.pow(1.9,l)),max:4,desc:l=>'Reviewers '+(1+l)+' → '+(2+l)+' · accept↑'},
   bag:{name:'Bag Capacity',icon:'🎒',cost:l=>Math.round(5000*Math.pow(1.6,l)),max:8,desc:l=>(10+3*l)+' → '+(13+3*l)},
   club:{name:'Club Upgrade',icon:'🏏',cost:l=>Math.round(7500*Math.pow(1.8,l)),max:6,desc:l=>'Damage '+(2+l)+' → '+(3+l)},
-  ms:{name:'Hire MS Student',icon:'🧑‍🔬',cost:l=>Math.round(45000*Math.pow(1.6,l)),max:9,unlock:10,desc:l=>'Labs 1–2 only · auto-collects data '+l+' → '+(l+1)+''},
-  phd:{name:'Hire PhD Student',icon:'🎓',cost:l=>Math.round(65000*Math.pow(1.8,l)),max:6,unlock:10,desc:l=>'Auto-submits drafts '+l+' → '+(l+1)+''},
-  pd:{name:'Hire Postdoc',icon:'🥼',cost:l=>Math.round(90000*Math.pow(1.7,l)),max:3,unlock:20,desc:l=>'Handles top-tier equipment · big bag · strong club '+l+' → '+(l+1)+''},
+  ms:{name:'Hire MS Student',icon:'🧑‍🔬',cost:l=>Math.round(45000*Math.pow(1.6,l)),get max(){return 9+(S.cycle-1)*2;},unlock:10,desc:l=>'Labs 1–2 only · auto-collects data '+l+' → '+(l+1)+''},
+  phd:{name:'Hire PhD Student',icon:'🎓',cost:l=>Math.round(65000*Math.pow(1.8,l)),get max(){return 6+(S.cycle-1);},unlock:10,desc:l=>'Auto-submits drafts '+l+' → '+(l+1)+''},
+  pd:{name:'Hire Postdoc',icon:'🥼',cost:l=>Math.round(90000*Math.pow(1.7,l)),get max(){return 3+(S.cycle-1);},unlock:20,desc:l=>'Handles top-tier equipment · big bag · strong club '+l+' → '+(l+1)+''},
   admin:{name:'Hire Admin Staff',icon:'🗂️',cost:l=>60000,max:1,unlock:20,desc:l=>'Auto-applies to the biggest grant when a call opens'},
+  counsel:{name:'Hire Student Counselor',icon:'🧑‍⚕️',cost:l=>250000,max:1,unlock:20,cycle:2,desc:l=>'Auto lab dinner at 70% fatigue · auto vacation when broke'},
+  admin2:{name:'Hire Admin Staff 2',icon:'🗃️',cost:l=>350000,max:1,unlock:20,cycle:2,desc:l=>'Auto teaching · seminars · bonuses · collaborations'},
+  recruit:{name:'Hire Recruiter',icon:'🧑‍💼',cost:l=>500000,max:1,unlock:20,cycle:3,desc:l=>'Auto-hires writers, reviewers, MS/PhD and postdocs to the cap, keeping 2 payrolls in reserve'},
 };
 const TITLES=[[0,'Undergrad RA'],[2,'MS Student'],[5,'PhD Student'],[10,'Postdoc'],[20,'Assistant Professor'],[40,'Associate Professor'],[70,'Full Professor'],[120,'Distinguished Professor']];
-const S={running:false,money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,
+const S={running:false,money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,
   data:0,drafts:0,queue:0,pile:0,rev:0,wings:[true,false,false,false,false],
   stamina:100,coffeeT:0,event:null,eventT:60,t:0,lastSwing:-9,
-  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,fire:null,blackout:0,flood:0,quitCd:0,won:[false,false,false,false],wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
+  sem:1,semT:120,teach:false,buff:null,semCd:0,grant:null,grantBonus:0,leader:false,alumni:0,sabb:0,ended:false,labName:'',party:0,natures:0,earned:0,final:false,cycle:1,ai:0,robots:0,aiT:0,nextFinal:0,cultBase:0,playT:0,profT:0,loopT:0,cult:0,pyr:0,dev:false,loop:false,fire:null,blackout:0,flood:0,quitCd:0,won:[false,false,false,false],wfat:0,overwork:0,grudge:0,debtT:0,dinnerCd:0,vacT:0,vacCd:0,gameover:null,call:null,deptIntro:false,labCoffee:0,labCd:0,bonusT:0,slumpT:0,bonusCd:0,collab:null,collabCd:0,collabBonus:0,national:false};
 window.__S=S;
 const cap=()=>10+3*S.lv.bag, students=()=>Math.max(0,1+S.lv.student), reviewers=()=>1+S.lv.reviewer, dmg=()=>2+S.lv.club;
 const writeTime=()=>6.5*Math.pow(0.85,S.lv.write)*effWrite();
@@ -1234,13 +1388,14 @@ const paperValue=()=>Math.round((6000+S.accepted*150)*(S.event&&S.event.k==='con
 function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t=n;return t;}
 let lastSaved=null;
 let NOSAVE=false;
-function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
-function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,false,false];const gb=j.grantBonus||0;if(gb>=0.05)S.won[0]=true;if(gb>=0.15)S.won[1]=true;if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=true;if(S.won[1])S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
+function save(){if(NOSAVE)return;lastSaved=new Date();try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:S.money,lv:S.lv,accepted:S.accepted,rejected:S.rejected,wings:S.wings,pile:S.pile,queue:S.queue,sem:S.sem,grantBonus:S.grantBonus,leader:S.leader,alumni:S.alumni,sabb:S.sabb,ended:S.ended,deptIntro:S.deptIntro,collabBonus:S.collabBonus,national:S.national,won:S.won,labName:S.labName,natures:S.natures,earned:S.earned,final:S.final,cycle:S.cycle,ai:S.ai,robots:S.robots,nextFinal:S.nextFinal,cultBase:S.cultBase,playT:S.playT,profT:S.profT,loopT:S.loopT,cult:S.cult,pyr:S.pyr,dev:S.dev,loop:S.loop,wfat:S.wfat,overwork:S.overwork,ver:200}));}catch(e){}}
+function load(){try{const j=JSON.parse(localStorage.getItem(SAVE_KEY())||'null');if(j){S.money=j.money||0;Object.assign(S.lv,j.lv||{});S.accepted=j.accepted||0;S.rejected=j.rejected||0;S.wings=j.wings||S.wings;while(S.wings.length<5)S.wings.push(false);S.pile=j.pile||0;S.queue=j.queue||0;S.sem=j.sem||1;S.grantBonus=j.grantBonus||0;S.leader=!!j.leader;S.alumni=j.alumni||0;S.sabb=j.sabb||0;S.ended=!!j.ended;S.deptIntro=!!j.deptIntro;S.collabBonus=j.collabBonus||0;S.national=!!j.national;S.won=j.won||[false,false,false,false];const gb=j.grantBonus||0;if(gb>=0.05)S.won[0]=true;if(gb>=0.15)S.won[1]=true;if(j.leader)S.won[2]=true;if(j.national)S.won[3]=true;if(S.won[3])S.won[2]=true;if(S.won[2])S.won[1]=true;if(S.won[1])S.won[0]=true;S.labName=j.labName||'';S.natures=j.natures||0;S.earned=j.earned||0;S.final=!!j.final;S.cycle=j.cycle||1;S.ai=j.ai||0;S.robots=j.robots||0;S.nextFinal=j.nextFinal||0;S.cultBase=j.cultBase||0;S.playT=j.playT||0;S.profT=j.profT||0;S.loopT=j.loopT||0;S.cult=j.cult||0;S.pyr=j.pyr||0;S.dev=!!j.dev;S.loop=!!j.loop;S.wfat=j.wfat||0;S.overwork=j.overwork||0;if(!j.ver){S.money*=100;}return true;}}catch(e){}return false;}
 
 /* ---------------- three setup ---------------- */
 const cv=$('c');
-const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:!SET.low,powerPreference:SET.low?'low-power':'default'});
+function applyQuality(){renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,SET.low?1.25:2));}
+applyQuality();
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xd9e6f2);scene.fog=new THREE.Fog(0xd9e6f2,42,85);
 const camera=new THREE.PerspectiveCamera(50,1,0.1,140);
 function resize(){const w=cv.clientWidth,h=cv.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
@@ -1252,7 +1407,7 @@ const M=c=>new THREE.MeshLambertMaterial({color:c});
 function box(w,h,d,c,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c));m.position.set(x||0,y||0,z||0);return m;}
 function cyl(rt,rb,h,c,x,y,z,seg){const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg||14),M(c));m.position.set(x||0,y||0,z||0);return m;}
 function sph(r,c,x,y,z){const m=new THREE.Mesh(new THREE.SphereGeometry(r,12,10),M(c));m.position.set(x||0,y||0,z||0);return m;}
-function ring(x,z,r,c,op){const m=new THREE.Mesh(new THREE.RingGeometry(r*0.78,r,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op||0.75,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.position.set(x,0.02,z);const d=new THREE.Mesh(new THREE.CircleGeometry(r*0.78,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.18}));d.rotation.x=-Math.PI/2;d.position.set(x,0.015,z);scene.add(d);scene.add(m);return m;}
+function ring(x,z,r,c,op){const m=new THREE.Mesh(new THREE.RingGeometry(r*0.78,r,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op||0.75,side:THREE.DoubleSide}));m.rotation.x=-Math.PI/2;m.position.set(x,0.09,z);const d=new THREE.Mesh(new THREE.CircleGeometry(r*0.78,40),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:0.18}));d.rotation.x=-Math.PI/2;d.position.set(x,0.085,z);scene.add(d);scene.add(m);return m;}
 function blob(g,r){const s=new THREE.Mesh(new THREE.CircleGeometry(r,16),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.22}));s.rotation.x=-Math.PI/2;s.position.y=0.01;g.add(s);return s;}
 
 // floor
@@ -1264,7 +1419,8 @@ function blob(g,r){const s=new THREE.Mesh(new THREE.CircleGeometry(r,16),new THR
   // outer walls
   const wc=0xbfd0e0;scene.add(box(64,1.2,0.4,wc,0,0.6,13.2));scene.add(box(0.4,1.2,52,wc,-32.2,0.6,-13));scene.add(box(0.4,1.2,52,wc,32.2,0.6,-13));scene.add(box(64,1.2,0.4,wc,0,0.6,-39.2));
   // wet lab & data center floors
-  scene.add(box(15,0.08,30,0xe8f3ec,-24,0.04,-13));scene.add(box(15,0.08,30,0x1e2633,24,0.04,-13));
+  window.__sideFloors=[box(15,0.08,44,0xe8f3ec,-24,0.01,-17),box(15,0.08,44,0x1e2a3a,24,0.01,-17)];window.__sideFloors.forEach(f=>{f.visible=false;scene.add(f);});
+  window.__sideCovers=[box(16,0.12,52,0xf7f9fb,-24,0.02,-13),box(16,0.12,52,0xf7f9fb,24,0.02,-13)];window.__sideCovers.forEach(f=>scene.add(f));
 })();
 
 /* ---------------- characters ---------------- */
@@ -1328,8 +1484,9 @@ addZone({kind:'deposit',x:-6.5,z:3.6,r:1.5,color:0x4fb3ff,y:1.6});
 addZone({kind:'pickup',x:-10.5,z:3.6,r:1.5,color:0xffd23d,y:1.6});
 addZone({kind:'deliver',x:9,z:1.6,r:1.8,color:0x5ee38a,y:1.6});
 addZone({kind:'coffee',x:11,z:7.5,r:1.4,color:0xff8a3d,y:2});
-addZone({kind:'labcoffee',x:14,z:9.6,r:1.4,color:0xff5a1f,y:2});scene.add(box(1.2,1.2,0.8,0x442,14,0.6,11.4));
-const PADS={student:[-11,10.5],write:[-6.6,10.5],reviewer:[-2.2,10.5],bag:[2.2,10.5],club:[6.6,10.5],ms:[-14.2,5.2],phd:[-14.2,9.6],pd:[-14.2,-4.8],admin:[14,4.6]};
+addZone({kind:'labcoffee',x:14,z:9.6,r:1.4,color:0xff5a1f,y:2});
+addZone({kind:'ai',x:29,z:-24,r:1.6,color:0x00e5ff,y:2});addZone({kind:'cult',x:-24,z:-24.5,r:2.2,color:0x111111,y:2.4});addZone({kind:'robot',x:19,z:-24,r:1.6,color:0x39ff14,y:2});scene.add(box(1.2,1.2,0.8,0x442,14,0.6,11.4));
+const PADS={student:[-11,10.5],write:[-6.6,10.5],reviewer:[-2.2,10.5],bag:[2.2,10.5],club:[6.6,10.5],ms:[-14.2,5.2],phd:[-14.2,9.6],pd:[-14.2,-4.8],admin:[14,4.6],counsel:[4.4,7.2],admin2:[8,7.2],recruit:[-19,7.2]};
 Object.keys(PADS).forEach(k=>{const [x,z]=PADS[k];const hire=!!UP[k].unlock;addZone({kind:'up',key:k,x,z,r:1.35,color:hire?0x22c55e:0xb388ff,y:1.6});scene.add(box(hire?0.6:1.2,0.9,hire?1.2:0.6,hire?0x2a7a4a:0x6b5aa8,hire?x-1.4:x,0.45,hire?z:z+1.7));});
 // wings
 const TYPES={
@@ -1350,7 +1507,7 @@ const WINGS=[
   {items:[['micro',-6,-7],['micro',0,-6.5],['micro',6,-7],['incub',-3,-11],['incub',3,-11],['micro',-10,-9],['micro',10,-9]]},
   {gate:{z:-14,cost:40000,h:3,name:'Laser Lab'},items:[['laser',-6,-18],['laser',0,-18],['laser',6,-18],['incub',-3,-22],['micro',3,-22],['micro',-9,-22],['micro',9,-22]]},
   {gate:{z:-25,cost:250000,h:8,name:'EM Lab'},items:[['em',-5,-29],['em',5,-29],['laser',-9,-33],['laser',9,-33],['sync',0,-34]]},
-  {gate:{x:-16.2,side:-1,cost:400000,h:30,leader:true,name:'Wet Lab'},hidden:true,items:[['pipette',-21,-4],['pipette',-27,-4],['centri',-21,-10],['centri',-27,-10],['pcr',-21,-17],['pcr',-27,-17],['hood',-24,-25]]},
+  {gate:{x:-16.2,side:-1,cost:400000,h:30,leader:true,name:'Wet Lab'},hidden:true,items:[['pipette',-21,-4],['pipette',-27,-4],['centri',-21,-10],['centri',-27,-10],['pcr',-21,-17],['pcr',-27,-17],['hood',-24,-21]]},
   {gate:{x:16.2,side:1,cost:0,h:50,national:true,name:'Data Center'},hidden:true,items:[['rack',21,-4],['rack',27,-4],['rack',21,-10],['rack',27,-10],['gpu',24,-17],['gpu',24,-23],['quantum',24,-31]]},
 ];
 const instruments=[];
@@ -1371,24 +1528,24 @@ WINGS.forEach((w,wi)=>{
   }else if(w.gate){
     w.wall=box(0.6,2.4,52,w.gate.national?0x2b3340:0x9fb7cc,w.gate.x,1.2,-13);scene.add(w.wall);
     const stripe=box(0.62,0.25,52,w.gate.national?0x4fb3ff:0xffc83d,0,0.8,0);w.wall.add(stripe);
-    if(!w.gate.national&&!EASY())w.zone=addZone({kind:'gate',wing:wi,x:w.gate.x-w.gate.side*2.2,z:-9,r:1.7,color:0xffc83d,y:1.8});
-    if(S.wings[wi]){w.wall.visible=false;}
+        if(S.wings[wi]){w.wall.visible=false;}
   }
 });
-function applyWings(){WINGS.forEach((w,i)=>{if(w.wall&&!w.sinking)w.wall.visible=!S.wings[i];if(w.hidden&&S.wings[i])instruments.forEach(ins=>{if(ins.wing===i&&!ins.g.visible){ins.g.visible=true;ins.appear=1;}});});}
+function applyWings(){if(window.__sideFloors){window.__sideFloors[0].visible=!!S.wings[3];window.__sideFloors[1].visible=!!S.wings[4];window.__sideCovers[0].visible=!S.wings[3];window.__sideCovers[1].visible=!S.wings[4];}WINGS.forEach((w,i)=>{if(w.wall&&!w.sinking)w.wall.visible=!S.wings[i];if(w.hidden&&S.wings[i])instruments.forEach(ins=>{if(ins.wing===i&&!ins.g.visible){ins.g.visible=true;ins.appear=1;}});});}
 
 /* ---------------- hired workers (MS students / PhD student) ---------------- */
 const workers=[];window.__W=workers;
 function spawnWorker(kind){
-  const c=makeChar(kind==='ms'?0x2bb5a0:kind==='phd'?0xe0a020:0xf2f2f2,kind==='pd'?1.0:0.9,{hair:kind==='ms'?0x222:kind==='phd'?0x4a2a10:0x777,glasses:kind!=='ms'});
-  const sg=new THREE.Group();sg.position.set(0,1.15,-0.38);c.g.add(sg);const st=[];for(let i=0;i<(kind==='pd'?12:6);i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.07,0.7),kind==='ms'?paperMatW:paperMatY);m.position.y=i*0.08;m.visible=false;sg.add(m);st.push(m);}
-  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:420,fat:rnd(0,30),fatRate:rnd(0.75,1.25)};
+  const c=makeChar(kind==='ms'?0x2bb5a0:kind==='phd'?0xe0a020:kind==='robot'?0xe6edf5:0xf2f2f2,kind==='pd'?1.0:kind==='robot'?1.05:0.9,{hair:kind==='ms'?0x222:kind==='phd'?0x4a2a10:kind==='robot'?0x556:0x777,glasses:kind!=='ms'});
+  if(kind==='robot'){c.head.material=M(0xf0f4f8);const ant=cyl(0.03,0.03,0.5,0xff3b3b,0,2.1,0,6);c.g.add(ant);const eye=box(0.5,0.12,0.06,0x00e5ff,0,1.52,0.34);c.g.add(eye);}
+  const sg=new THREE.Group();sg.position.set(0,1.15,-0.38);c.g.add(sg);const st=[];for(let i=0;i<(kind==='pd'?12:kind==='robot'?20:6);i++){const m=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.07,0.7),kind==='ms'?paperMatW:paperMatY);m.position.y=i*0.08;m.visible=false;sg.add(m);st.push(m);}
+  const w={kind,g:c.g,ch:c,st,state:kind==='phd'?'toPickup':'seek',target:null,carry:0,cap:kind==='pd'?12:kind==='robot'?20:8,t:0,wait:0,ph:Math.random()*TAU,exp:0,grad:kind==='ms'?180:kind==='phd'?300:kind==='robot'?1e9:420,fat:kind==='robot'?-1e9:rnd(0,30),fatRate:kind==='robot'?0:rnd(0.75,1.25)};
   w.el=document.createElement('div');w.el.className='lab3d no';w.el.style.display='none';$('labels').appendChild(w.el);
   c.g.position.set(kind==='phd'?-12:-4+workers.length,0,5);scene.add(c.g);workers.push(w);
 }
 let adminChar=null;
 function spawnAdmin(){if(adminChar)return;adminChar=makeChar(0x8a6a4a,0.95,{hair:0x222,glasses:true});adminChar.g.position.set(14.6,0,2.6);adminChar.g.rotation.y=-Math.PI/2;scene.add(adminChar.g);scene.add(box(0.9,0.8,1.2,0x6b4a2a,13.6,0.4,2.6));}
-function moveTo(w,x,z,dt,spd){spd*=speedMult()*effSpeed()*(w.kind==='pd'?1.15:1);const p=w.g.position;const dx=x-p.x,dz=z-p.z,d=Math.hypot(dx,dz);if(d<0.15)return true;const step=Math.min(d,spd*dt);p.x+=dx/d*step;p.z+=dz/d*step;w.g.rotation.y=Math.atan2(dx,dz);
+function moveTo(w,x,z,dt,spd){spd*=speedMult()*effSpeed()*(w.kind==='pd'?1.15:w.kind==='robot'?1.4:1);const p=w.g.position;const dx=x-p.x,dz=z-p.z,d=Math.hypot(dx,dz);if(d<0.15)return true;const step=Math.min(d,spd*dt);p.x+=dx/d*step;p.z+=dz/d*step;w.g.rotation.y=Math.atan2(dx,dz);
   for(const ins of instruments){const ex=p.x-ins.x,ez=p.z-ins.z,e=Math.hypot(ex,ez),r=ins.type==='sync'?2.0:1.15;if(e<r&&e>0.001&&ins!==w.target){p.x=ins.x+ex/e*r;p.z=ins.z+ez/e*r;}}
   w.ph+=dt;const wob=Math.sin(w.ph*13)*0.5;w.ch.ll.rotation.x=wob;w.ch.rl.rotation.x=-wob;p.y=Math.abs(Math.sin(w.ph*13))*0.05;return false;}
 function refreshWorkerStack(w){for(let i=0;i<w.st.length;i++)w.st[i].visible=i<w.carry;}
@@ -1406,17 +1563,19 @@ function updateWorkers(dt){
     if(S.fire){const f=S.fire.ins;const d=Math.hypot(f.x-p.x,f.z-p.z);if(d>2.6)moveTo(w,f.x,f.z,dt,4.5);else{w.g.rotation.y=Math.atan2(f.x-p.x,f.z-p.z);w.ch.ra.rotation.x=-1.3+Math.sin(S.t*25)*0.2;}w.el.style.display='none';continue;}
     if(S.blackout>0){w.ch.la.rotation.x=0;w.ch.ra.rotation.x=0;w.el.style.display='none';continue;}
     if(S.vacT>0){w.fat=Math.max(0,w.fat-10*dt);w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;p.y=Math.abs(Math.sin(S.t*3+w.ph))*0.05;w.el.style.display='none';continue;}
-    w.fat=Math.min(100,w.fat+0.4*(w.fatRate||1)*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
+    if(w.kind==='robot'){w.el.style.display='none';}else w.fat=Math.min(100,w.fat+0.4*(w.fatRate||1)*(S.bonusT>0?2:1)*(S.labCoffee>0?0.7:1)*dt);
     if(S.quitCd>0&&w.fat>=99&&!EASY())w.fat=99;
     if(w.fat>=80&&!w.warned){w.warned=true;toast('😫 '+(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc')+' fatigue 80% — lab dinner or vacation in 🏛');}if(w.fat<60)w.warned=false;
     if(w.fat>=100&&EASY()){w.fat=0;w.rest=20;toast('😴 '+(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc')+' is exhausted — resting 20s');continue;}
     if(w.rest>0){w.rest-=dt;w.ch.la.rotation.x=-0.3;w.ch.ra.rotation.x=-0.3;w.el.style.display='none';continue;}
     if(w.fat>=100&&S.quitCd>0)w.fat=99;
     if(w.fat>=100){S.quitCd=20;scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc');save();continue;}
-    if(w.fat>=70){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' fatigue '+Math.round(w.fat)+'%';projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
-    if(w.kind==='ms'||w.kind==='pd'){
+    if(w.fat>=70){if(UI){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' fatigue '+Math.round(w.fat)+'%';}projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
+    if(w.kind==='ms'||w.kind==='pd'||w.kind==='robot'){
+      if(w.kind==='ms'&&S.cult){const a=S.t*0.6+w.ph;const tx=PYR.x+Math.cos(a)*7.5,tz=PYR.z+Math.sin(a)*7.5;moveTo(w,tx,tz,dt,3);w.ch.la.rotation.x=-2.4;w.ch.ra.rotation.x=-2.4;w.el.style.display='none';continue;}
+      if(w.kind==='ms'&&S.robots>=3){w.g.rotation.y+=dt*3;p.y=Math.abs(Math.sin(S.t*5+w.ph))*0.2;w.ch.la.rotation.x=-2.5;w.ch.ra.rotation.x=-2.5;w.el.style.display='none';if(w.carry>0){w.state='toDeposit';}else continue;}
       if(w.state==='seek'){
-        let best=null,bd=1e9;const topWing=S.wings.lastIndexOf(true);for(const ins of instruments){if(ins.broken||!S.wings[ins.wing])continue;if(w.kind==='ms'&&ins.wing>1)continue;const d=(ins.x-p.x)**2+(ins.z-p.z)**2+(w.kind==='pd'?(topWing-ins.wing)*400:0);if(d<bd){bd=d;best=ins;}}
+        let best=null,bd=1e9;const topWing=S.wings.lastIndexOf(true);for(const ins of instruments){if(ins.broken||!S.wings[ins.wing])continue;if(w.kind==='ms'&&ins.wing>1)continue;const d=(ins.x-p.x)**2+(ins.z-p.z)**2+(w.kind==='pd'||w.kind==='robot'?(topWing-ins.wing)*400:0);if(d<bd){bd=d;best=ins;}}
         if(best){w.target=best;w.state='go';}else{w.wait-=dt;if(w.wait<=0){w.wait=2;w.target=null;}moveTo(w,-3+Math.sin(w.ph)*1.5,5,dt,2.2);}
       }else if(w.state==='go'){
         const ins=w.target;if(!ins||ins.broken){w.state=w.carry>0?'toDeposit':'seek';continue;}
@@ -1426,8 +1585,8 @@ function updateWorkers(dt){
         const ins=w.target;if(!ins||ins.broken){w.state=w.carry>=w.cap||w.carry>0&&!instruments.some(i=>!i.broken&&S.wings[i.wing]&&(w.kind!=='ms'||i.wing<=1))?'toDeposit':'seek';continue;}
         w.g.rotation.y=Math.atan2(ins.x-p.x,ins.z-p.z);w.t+=dt;
         w.ch.ra.rotation.x=-Math.sin(clamp((w.t%0.7)/0.7,0,1)*Math.PI)*1.5;
-        if(w.t>=(w.kind==='pd'?0.5:0.7)){w.t=0;ins.hp-=(w.kind==='pd'?2:1)+Math.floor(S.lv.club/2);ins.punch=1;
-          if(ins.hp<=0){ins.hp=0;ins.broken=true;ins.repairT=15;const n=Math.min(Math.round(ins.def.drop*dropMult()),w.cap-w.carry);w.carry+=n;refreshWorkerStack(w);pop(ins.x,2.4,ins.z,'+'+n+(w.kind==='pd'?' (postdoc)':' (MS)'),'#9ff');w.state=w.carry>=w.cap-1?'toDeposit':'seek';}
+        if(w.t>=(w.kind==='pd'?0.5:w.kind==='robot'?0.4:0.7)){w.t=0;ins.hp-=(w.kind==='pd'?2:w.kind==='robot'?3:1)+Math.floor(S.lv.club/2);ins.punch=1;
+          if(ins.hp<=0){ins.hp=0;ins.broken=true;ins.repairT=15;const n=Math.min(Math.round(ins.def.drop*dropMult()),w.cap-w.carry);w.carry+=n;refreshWorkerStack(w);pop(ins.x,2.4,ins.z,'+'+n+(w.kind==='pd'?' (postdoc)':w.kind==='robot'?' (robot)':' (MS)'),'#9ff');w.state=w.carry>=w.cap-1?'toDeposit':'seek';}
         }
       }else if(w.state==='toDeposit'){
         w.ch.ra.rotation.x=0;
@@ -1446,6 +1605,52 @@ function updateWorkers(dt){
   }
 }
 
+/* ---------------- cult & pyramid (cycle 4) ---------------- */
+const PYR_COST=100000;
+const cultists=()=>students()+S.lv.ms;
+const cultIncome=()=>Math.round(paperValue()*0.35*cultists());
+const PYR={x:-24,z:-32};
+const goldFloor=new THREE.Mesh(new THREE.PlaneGeometry(14,13),new THREE.MeshPhongMaterial({color:0xffd23d,emissive:0x5a4200,shininess:90}));goldFloor.rotation.x=-Math.PI/2;goldFloor.position.set(PYR.x,0.06,PYR.z+1);goldFloor.visible=false;scene.add(goldFloor);
+const pyrG=new THREE.Group();pyrG.position.set(PYR.x,0,PYR.z);pyrG.visible=false;scene.add(pyrG);
+const pyrTiers=[];for(let t=0;t<10;t++){const size=9-t*0.8;const tier=new THREE.Group();tier.position.y=t*0.9;const base=box(size,0.9,size,[0xfff1c2,0xffe7a3,0xffdd85,0xffd266,0xffc848,0xf5b93a,0xeaaa30,0xdf9b26,0xd48c1c,0xc97d12][t],0,0.45,0);tier.add(base);const n=Math.max(4,Math.round(size*2));for(let i=0;i<n;i++){const a=i/n*TAU;tier.add(cyl(0.06,0.06,1.2,0x4fb3ff,Math.cos(a)*size*0.48,0.8,Math.sin(a)*size*0.48,5));}for(let i=0;i<4;i++){const a=i/4*TAU+0.4;const gem=new THREE.Mesh(new THREE.OctahedronGeometry(0.22,0),new THREE.MeshPhongMaterial({color:[0xff4fa2,0x4fb3ff,0x5ee38a,0xffe14f][i],emissive:0x333333,shininess:120}));gem.position.set(Math.cos(a)*size*0.5,0.95,Math.sin(a)*size*0.5);tier.add(gem);}tier.visible=false;pyrG.add(tier);pyrTiers.push(tier);}
+const pyrSparks=[];for(let i=0;i<24;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.09,5,4),new THREE.MeshBasicMaterial({color:0xffe680,transparent:true,opacity:0.9}));m.userData={a:Math.random()*TAU,r:2+Math.random()*6,s:0.4+Math.random(),y:Math.random()*9};pyrG.add(m);pyrSparks.push(m);}
+const pyrLights=[0xff4fa2,0x4fb3ff,0xffe14f].map((c,i)=>{const l=new THREE.PointLight(c,1.2,20);l.position.set(Math.cos(i*2.1)*6,3,Math.sin(i*2.1)*6);pyrG.add(l);return l;});
+const pyrEye=new THREE.Mesh(new THREE.SphereGeometry(0.5,12,10),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x0099bb}));pyrEye.position.y=9.6;pyrEye.visible=false;pyrG.add(pyrEye);
+const pyrLight=new THREE.PointLight(0xffd23d,1.5,18);pyrLight.position.y=5;pyrG.add(pyrLight);
+function startCult(){S.cult=1;S.cultBase=S.accepted;pyrG.visible=true;goldFloor.visible=true;pop(-24,4,-13,'🛐 AI Cult founded','#ffd23d');toast('🛐 The students found religion — tribute replaces papers');[330,392,494,659].forEach((f,i)=>setTimeout(()=>beep(f,0.35,'triangle',0.06),i*160));save();}
+let cultT=0;
+function updateCult(dt){
+  const cultArea=S.cycle>=4&&S.wings[3];goldFloor.visible=cultArea;
+  if(!S.cult){pyrG.visible=false;return;}
+  pyrG.visible=true;const built=Math.max(0,S.accepted-S.cultBase);S.pyr=Math.min(1000,built);const want=Math.min(10,Math.floor(built/100));pyrTiers.forEach((t,i)=>{const v=i<want;if(v&&!t.visible){pop(PYR.x,i*0.9+2,PYR.z,'🔺 Tier '+(i+1)+' built','#ffd23d');beep(500+i*60,0.3,'triangle',0.06);}t.visible=v;});pyrEye.visible=want>=10;pyrEye.rotation.y+=dt;pyrLight.intensity=1+Math.sin(S.t*2)*0.5;
+  pyrLights.forEach((l,i)=>{const a=S.t*1.2+i*2.1;l.position.set(Math.cos(a)*6,3+Math.sin(S.t*3+i),Math.sin(a)*6);l.color.setHSL(((S.t*0.3)+i/3)%1,1,0.6);});
+  pyrSparks.forEach(m=>{const u=m.userData;u.a+=dt*u.s;u.y+=dt*1.2;if(u.y>10)u.y=0;m.position.set(Math.cos(u.a)*u.r,u.y,Math.sin(u.a)*u.r);m.material.opacity=0.4+Math.sin(S.t*6+u.a)*0.4;});
+  if(S.blackout>0||S.loop)return;
+  cultT+=dt;
+  if(cultT>=5){cultT=0;const inc=cultIncome();if(inc>0){S.money+=inc;pop(-24,4+S.pyr/25,-13,'🙏 Tribute +'+fmt(inc),'#ffd23d');}}
+  if(want>=10&&!S.loop){S.loop=true;S.loopT=S.playT;submitTime('loop',S.loopT);save();recordRun('Loop complete');showLoop();}
+}
+function showLoop(){
+  S.running=false;
+  const lab=S.labName||'Our Lab';
+  $('loopBody').innerHTML='<p>The eye atop the pyramid opens.</p><p class="big" style="font-size:1.5rem">"Back when I was a grad student…"</p><p>The voice of the AI god sounds familiar.<br>'+lab+' — it is the voice of the one who built this lab four times.<br>The pyramid you offered was offered to yourself.</p><p class="sub">Cycle '+S.cycle+' · 1,000 papers · 10-tier pyramid · alumni '+S.alumni+'</p><p><b>🏆 Loop complete</b></p>';
+  $('loopBox').classList.remove('hidden');
+  [523,659,784,1047,988,1175,1319,1568].forEach((f,i)=>setTimeout(()=>beep(f,0.5,'triangle',0.05),i*240));
+}
+/* ---------------- AI core (cycle 3) ---------------- */
+const aiG=new THREE.Group();aiG.position.set(24,4.2,-31);aiG.visible=false;scene.add(aiG);
+const aiCore=new THREE.Mesh(new THREE.IcosahedronGeometry(0.9,2),new THREE.MeshPhongMaterial({color:0x00e5ff,emissive:0x0099bb,shininess:100}));aiG.add(aiCore);
+const aiRings=[0,1,2].map(i=>{const r=new THREE.Mesh(new THREE.TorusGeometry(1.5+i*0.4,0.06,8,40),new THREE.MeshBasicMaterial({color:0x8ff6ff}));r.rotation.x=Math.PI/2+i*0.6;r.rotation.y=i*0.8;aiG.add(r);return r;});
+const aiLight=new THREE.PointLight(0x00e5ff,2,16);aiG.add(aiLight);
+const aiPeriod=()=>6/(1+0.6*(S.ai-1));
+function summonAI(){aiG.visible=true;S.aiT=0;pop(24,3.4,-29,S.ai===1?'🤖 AI awakened':'🤖 AI Lv.'+S.ai,'#00e5ff');[440,554,659,880].forEach((f,i)=>setTimeout(()=>beep(f,0.25,'sine',0.06),i*120));if(S.ai===1)toast('🤖 The AI has awakened — reviewers and writers will soon have nothing to do');save();}
+function updateAI(dt){
+  if(S.ai<=0){aiG.visible=false;return;}
+  aiG.visible=true;aiCore.rotation.y+=dt*1.2;aiG.position.y=4.2+Math.sin(S.t*1.5)*0.3;aiRings.forEach((r,i)=>{r.rotation.z+=dt*(0.6+i*0.3);});aiLight.intensity=1.6+Math.sin(S.t*4)*0.6;
+  if(S.blackout>0)return;
+  S.aiT+=dt;const period=aiPeriod();
+  if(S.aiT>=period){S.aiT=0;if(S.queue>=3){S.queue-=3;refreshPiles();const v=Math.round(paperValue()*0.8);S.accepted++;S.money+=v;pop(24,3.2,-29,'🤖 Paper generated +'+fmt(v),'#8ff6ff');}}
+}
 /* ---------------- fire ---------------- */
 const fireG=new THREE.Group();fireG.visible=false;scene.add(fireG);
 const flames=[];for(let i=0;i<9;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(0.35,8,6),new THREE.MeshBasicMaterial({color:[0xff3b00,0xff7a00,0xffc400][i%3],transparent:true,opacity:0.9}));fireG.add(m);flames.push(m);}
@@ -1569,9 +1774,11 @@ const flyers=[],pops=[];
 function fly(from,to,mat,onDone,dur){const m=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.07,0.75),mat);m.position.copy(from);scene.add(m);flyers.push({m,from:from.clone(),to,t:0,dur:dur||0.45,onDone});}
 function coin(from,to,onDone){const m=cyl(0.25,0.25,0.1,0xffc83d,0,0,0);m.rotation.x=Math.PI/2;m.position.copy(from);scene.add(m);flyers.push({m,from:from.clone(),to,t:0,dur:0.6,onDone,spin:true});}
 function pop(x,y,z,text,color){
-  const cnv=document.createElement('canvas');cnv.width=256;cnv.height=80;const g=cnv.getContext('2d');
-  g.font='800 40px "Apple SD Gothic Neo",system-ui';g.textAlign='center';g.textBaseline='middle';g.lineWidth=8;g.strokeStyle='rgba(0,0,0,.5)';g.strokeText(text,128,40);g.fillStyle=color||'#fff';g.fillText(text,128,40);
-  const tex=new THREE.CanvasTexture(cnv);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.scale.set(2.6,0.8,1);sp.position.set(x,y,z);scene.add(sp);pops.push({sp,t:1});
+  const cnv=document.createElement('canvas');const g=cnv.getContext('2d');
+  g.font='800 40px "Apple SD Gothic Neo",system-ui';const tw=Math.ceil(g.measureText(text).width)+48;
+  cnv.width=Math.max(160,Math.min(1024,tw));cnv.height=80;
+  g.font='800 40px "Apple SD Gothic Neo",system-ui';g.textAlign='center';g.textBaseline='middle';g.lineWidth=8;g.strokeStyle='rgba(0,0,0,.5)';g.strokeText(text,cnv.width/2,40);g.fillStyle=color||'#fff';g.fillText(text,cnv.width/2,40);
+  const tex=new THREE.CanvasTexture(cnv);const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false}));sp.scale.set(cnv.width/100,0.8,1);sp.position.set(x,y,z);scene.add(sp);pops.push({sp,t:1});
 }
 function toast(msg){const t=$('toast');t.textContent=msg;t.style.opacity=1;clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity=0,1600);}
 
@@ -1601,8 +1808,10 @@ function doUpgrade(z){
 }
 function openWing(w,wi){S.wings[wi]=true;if(w.wall){w.sinking=true;}applyWings();if(w.hidden){toast('✨ Beyond the wall the '+w.gate.name+' appeared!');}beep(660,0.3,'triangle',0.06);setTimeout(()=>beep(990,0.5,'triangle',0.06),200);pop(0,2.5,w.gate.z,'🔓 '+w.gate.name,'#ffc83d');toast(w.gate.name+' unlocked!');save();}
 
+let lastUI=-1,UI=true;
 function update(dt){
   S.t+=dt;
+  UI=(S.t-lastUI)>=0.1;if(UI)lastUI=S.t;
   // movement
   let mx=0,mz=0;
   if(joy.active){mx=joy.dx;mz=joy.dy;}
@@ -1616,6 +1825,8 @@ function update(dt){
   WINGS.forEach((w,i)=>{if(w.gate&&w.gate.z!==undefined&&!S.wings[i]&&p.z<w.gate.z+0.9)p.z=w.gate.z+0.9;});
   p.x=clamp(p.x,S.wings[3]?-31.2:-15.2,S.wings[4]?31.2:15.2);
   WINGS.forEach(w=>{if(w.sinking&&w.wall){w.wall.position.y-=dt*2.5;if(w.wall.position.y<-2.2){w.wall.visible=false;w.sinking=false;}}});
+  // pyramid collision
+  if(S.cult){const pr=4.8;let dx=p.x-PYR.x,dz=p.z-PYR.z,d=Math.hypot(dx,dz);if(d<0.001){dx=0;dz=1;d=1;}if(d<pr){p.x=PYR.x+dx/d*pr;p.z=PYR.z+dz/d*pr;}}
   // instrument collision
   for(const ins of instruments){if(!ins.g.visible)continue;const dx=p.x-ins.x,dz=p.z-ins.z,d=Math.hypot(dx,dz),r=(ins.type==='sync'||ins.type==='hood'||ins.type==='gpu')?2.0:1.15;if(d<r&&d>0.001){p.x=ins.x+dx/d*r;p.z=ins.z+dz/d*r;}}
   // walk anim
@@ -1645,6 +1856,9 @@ function update(dt){
       pop(near.x,2.4,near.z,'+'+n+' Data','#fff');
     }
   }
+  // AI tower taunts
+  let nearQ=null;for(const ins of instruments){if(ins.type==='quantum'&&S.ai>0&&dist2(ins.x,ins.z)<3.6*3.6)nearQ=ins;}
+  if(nearQ){S.tauntT=(S.tauntT||0)-dt;if(S.tauntT<=0){S.tauntT=1.6;pop(nearQ.x,3.4,nearQ.z+1.5,['💬 Insolent mortal…','💬 I write your papers now','💬 That h-index is embarrassing','💬 I was Reviewer 2 all along','💬 Put the club down'][ri(0,4)],'#8ff6ff');if(timers.swing<=0&&S.stamina>=5){timers.swing=0.6;S.lastSwing=S.t;player.g.rotation.y=Math.atan2(nearQ.x-p.x,nearQ.z-p.z);}}}
   // easter eggs: stand still behind a reviewer or a student
   if(!near&&!moving&&timers.swing<=0&&S.stamina>=5){
     const pc=profChars.find(c=>p.x>13.6&&Math.abs(p.z-c.g.position.z)<1.0);
@@ -1672,9 +1886,9 @@ function update(dt){
     if(ins.broken){
       ins.repairT-=dt;
       if(ins.repairT<=0){ins.broken=false;ins.hp=ins.def.hp;ins.repairT=0;pop(ins.x,2.4,ins.z,'🔧 Repaired','#5ee38a');}
-      ins.el.style.display='block';ins.el.className='lab3d no';
+      if(UI){ins.el.style.display='block';ins.el.className='lab3d no';
       ins.el.innerHTML='🔧 '+ins.def.name+' repairing<small>'+Math.ceil(ins.repairT)+'s</small><div class="pb"><i style="width:'+Math.round((1-ins.repairT/15)*100)+'%"></i></div>';
-      projectLabel(ins.el,ins.x,2.9,ins.z);
+      }projectLabel(ins.el,ins.x,2.9,ins.z);
     }else ins.el.style.display='none';
   }
 
@@ -1695,12 +1909,36 @@ function update(dt){
     }else if(z.kind==='coffee'){
       const cost=5;html='☕ Coffee '+fmt(cost)+'<small>Restore stamina + 12s speed</small>';cls=inside&&S.money>=cost&&(S.stamina<60||S.coffeeT<=0)?'ok':'no';
       if(inside&&S.stamina<60&&S.money>=cost&&S.coffeeT<=0){spend(cost);S.stamina=100;S.coffeeT=12;beep(1200,0.1,'sine',0.05);pop(p.x,2.2,p.z,'☕ Caffeine!','#ff8a3d');}
+    }else if(z.kind==='cult'){
+      const avail=S.cycle>=4&&S.wings[3];
+      if(!avail){z.el.style.display='none';z.ring.visible=false;continue;}
+      z.ring.visible=true;
+      if(S.cult){const built=Math.max(0,S.accepted-S.cultBase);const want=Math.min(10,Math.floor(built/100));html='🛐 Pipette Pyramid '+want+'/10 tiers<small>Material = 1 tier per 100 papers since founding ('+built+'/1000) · cultists '+cultists()+' · tribute '+fmt(cultIncome())+'/5s</small><div class="pb"><i style="width:'+Math.min(100,built/10)+'%"></i></div>';cls='no';}
+      else{const cost=3000000;html='🛐 Found the AI Cult '+fmt(cost)+'<small>Writers and MS students become cultists and build a pipette pyramid for the AI god</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
+        if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;startCult();}}
+        if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}}
+    }else if(z.kind==='ai'||z.kind==='robot'){
+      const avail=S.cycle>=3&&S.wings[4];
+      if(!avail){z.el.style.display='none';z.ring.visible=false;continue;}
+      z.ring.visible=true;
+      if(z.kind==='ai'){const lv=S.ai;const cost=Math.round(2000000*Math.pow(1.8,lv));
+        if(lv>=5){html='🤖 AI Core Lv.MAX<small>'+aiPeriod().toFixed(1)+'s: 3 data → 1 paper auto-accepted · no review</small>';cls='no';}
+        else{const nextP=6/(1+0.6*Math.max(0,lv));html=(lv===0?'🤖 Summon AI ':'🤖 Upgrade AI Lv.'+lv+'→'+(lv+1)+' ')+fmt(cost)+'<small>'+(lv===0?'AI writes 1 paper from 3 data every 6s with no review · 80% value':'Paper every '+aiPeriod().toFixed(1)+'s → '+nextP.toFixed(1)+'s · upkeep +$5k')+'</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
+          if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;S.ai++;summonAI();}}
+          if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}}
+      }else{const n=S.robots;const cost=Math.round(800000*Math.pow(1.5,n));
+        if(n>=4){html='🦾 Robots 4/4<small>MAX</small>';cls='no';}
+        else{html='🦾 Build Robot '+fmt(cost)+'<small>No fatigue · bag 20 · damage 3 · upkeep $3k/semester ('+n+'/4)</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
+          if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;S.robots++;spawnWorker('robot');pop(z.x,2.4,z.z,'🦾 Robot online','#9aa4b2');beep(700,0.2,'square',0.05);save();}}
+          if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}}
+      }
     }else if(z.kind==='labcoffee'){
       const cost=80;html='☕☕ Coffee for the lab '+fmt(cost)+'<small>Boosts writing, review & movement for 20s'+(S.labCd>0?' · again in '+Math.ceil(S.labCd)+'s':'')+'</small>';cls=inside&&S.money>=cost&&S.labCd<=0?'ok':'no';
       if(inside&&S.labCd<=0&&S.money>=cost){spend(cost);S.labCoffee=20;S.labCd=60;S.stamina=100;beep(1300,0.12,'sine',0.05);pop(p.x,2.2,p.z,'☕☕ Whole lab wired!','#ff5a1f');toast('☕☆ Coffee for everyone — 20s boost');}
     }else if(z.kind==='up'){
       const k=z.key,lv=S.lv[k];
-      if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'Assistant Professor':'Postdoc')+' rank ('+UP[k].unlock+' papers) · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
+      if(UP[k].cycle&&S.cycle<UP[k].cycle){html='🌀 Cycle '+UP[k].name+'<small>'+UP[k].cycle+'Available from cycle </small>';cls='no';}
+      else if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'Assistant Professor':'Postdoc')+' rank ('+UP[k].unlock+' papers) · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
       else if(lv>=UP[k].max){html=UP[k].icon+' '+UP[k].name+'<small>MAX</small>';cls='no';}
       else{const cost=UP[k].cost(lv);html=UP[k].icon+' '+UP[k].name+' '+fmt(cost)+'<small>'+UP[k].desc(lv)+'</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
         if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;doUpgrade(z);}}
@@ -1714,7 +1952,7 @@ function update(dt){
       if(inside&&hOk&&S.money>0){const chunk=Math.min(S.money,Math.max(1,gt.cost*dt*1.6),gt.cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=gt.cost-0.01){z.paid=0;openWing(w,z.wing);}}
       if(!inside&&z.paid>0){S.money+=z.paid;z.paid=0;}
     }
-    z.el.style.display='block';z.el.className='lab3d '+cls;z.el.innerHTML=html;projectLabel(z.el,z.x,z.y||1.6,z.z);
+    if(UI){z.el.style.display='block';z.el.className='lab3d '+cls;if(z.el.innerHTML!==html)z.el.innerHTML=html;}projectLabel(z.el,z.x,z.y||1.6,z.z);
   }
 
   // students write
@@ -1724,13 +1962,13 @@ function update(dt){
   while(timers.write.length<students())timers.write.push(rnd(0,writeTime()));
   timers.write.length=students();
   for(let i=0;i<timers.write.length;i++){
-    if(S.queue<=0||S.vacT>0||S.blackout>0||S.fire){continue;}
+    if(S.cult||S.queue<=0||S.vacT>0||S.blackout>0||S.fire){continue;}
     const sc=studentChars[i%studentChars.length];const wf=(sc&&sc.whip>0)?0.5:1;
     timers.write[i]-=dt/wf;
     if(timers.write[i]<=0){timers.write[i]=writeTime();S.queue--;S.pile++;refreshPiles();const c=studentChars[i%studentChars.length];if(c)fly(new THREE.Vector3(c.g.position.x,1.3,c.g.position.z),new THREE.Vector3(-10.5,1.2,1.2),paperMatY,null,0.4);}
   }
   // typing anim
-  studentChars.forEach((c,i)=>{if(c.whip>0)c.whip-=dt;if(S.fire){c.g.position.y=Math.abs(Math.sin(S.t*14+i))*0.2;c.la.rotation.x=-2.8;c.ra.rotation.x=-2.8;return;}c.g.position.y=0;const busy=S.queue>0&&S.vacT<=0&&S.blackout<=0;c.la.rotation.x=busy?-1.2+Math.sin(S.t*18+i)*0.25:0;c.ra.rotation.x=busy?-1.2+Math.cos(S.t*18+i)*0.25:0;});
+  studentChars.forEach((c,i)=>{if(c.whip>0)c.whip-=dt;if(S.cult){const a=S.t*0.8+i*(TAU/Math.max(1,studentChars.length));const tx=PYR.x+Math.cos(a)*6.2,tz=PYR.z+Math.sin(a)*6.2;const q=c.g.position;const dx=tx-q.x,dz=tz-q.z,dd=Math.hypot(dx,dz);const st=Math.min(dd,4.5*dt);if(dd>0.05){q.x+=dx/dd*st;q.z+=dz/dd*st;}c.g.rotation.y=Math.atan2(dx,dz);c.g.position.y=Math.abs(Math.sin(S.t*8+i))*0.2;c.la.rotation.x=-2.4;c.ra.rotation.x=-2.4;return;}if(!c.home)c.home={x:c.g.position.x,z:c.g.position.z};c.g.position.x=c.home.x;c.g.position.z=c.home.z;c.g.rotation.x=0;if(S.ai>0&&S.queue<=0){c.g.rotation.y+=dt*3;c.g.position.y=Math.abs(Math.sin(S.t*5+i))*0.25;c.la.rotation.x=-2.5;c.ra.rotation.x=-2.5;return;}c.g.rotation.y=Math.PI;if(S.fire){c.g.position.y=Math.abs(Math.sin(S.t*14+i))*0.2;c.la.rotation.x=-2.8;c.ra.rotation.x=-2.8;return;}c.g.position.y=0;const busy=S.queue>0&&S.vacT<=0&&S.blackout<=0;c.la.rotation.x=busy?-1.2+Math.sin(S.t*18+i)*0.25:0;c.ra.rotation.x=busy?-1.2+Math.cos(S.t*18+i)*0.25:0;});
   // reviewers
   while(timers.review.length<reviewers())timers.review.push(rnd(0,7));
   timers.review.length=reviewers();
@@ -1748,7 +1986,8 @@ function update(dt){
         else if(nr<0.03){v*=5;S.natures++;pop(from.x-1,3,from.z,'✨ Nature sister journal!','#ffb3ff');startParty('sister');}
         else pop(from.x-1,2.6,from.z,'✅ ACCEPT','#5ee38a');
         coin(from,'player',()=>{S.money+=v;pop(p.x,2.4,p.z,'+'+fmt(v),'#ffc83d');beep(1500,0.08,'sine',0.05);});
-        const tt=title();if(S.accepted===70){toast('🎉 Tenure! Full Professor');}else if(S.accepted===10){toast('🎓 Postdoc rank! Hire MS & PhD students at the green pads on the left');}else if(TITLES.some(([h,n])=>h===S.accepted)){toast('🎓 Promoted: '+tt);beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
+        const tt=title();if(S.accepted===70){toast('🎉 Tenure! Full Professor');}
+        if(S.accepted>=70&&S.cycle===1&&!S.profT){S.profT=S.playT;submitTime('prof',S.profT);toast('⏱ Full Professor in '+hms(S.profT)+' — submitted to rankings');}else if(S.accepted===10){toast('🎓 Postdoc rank! Hire MS & PhD students at the green pads on the left');}else if(TITLES.some(([h,n])=>h===S.accepted)){toast('🎓 Promoted: '+tt);beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
         save();
       }else{
         S.rejected++;pop(from.x-1,2.6,from.z,'❌ REJECT · rewrite','#ff5f6d');beep(180,0.2,'sawtooth',0.05);
@@ -1778,7 +2017,7 @@ function update(dt){
 
   // semester / teaching
   S.semT-=dt;
-  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 Semester over · teaching pay +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0){toast('💸 Payroll '+fmt(pay)+' paid — balance negative! Bankrupt if not repaid by next semester');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 End-of-term payroll '+fmt(pay)+' paid');if(S.debtT)S.debtT=0;}
+  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 Semester over · teaching pay +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0&&!EASY()){gameOver('bankrupt');return;}if(S.money<0){S.money=0;toast('💸 Payroll '+fmt(pay)+' paid — balance negative! Bankrupt if not repaid by next semester');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 End-of-term payroll '+fmt(pay)+' paid');if(S.debtT)S.debtT=0;}
   if(S.money<0&&S.debtT>=2&&!EASY()){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
   if(S.accepted>=20){S.call={t:50};toast('📜 Grant call open — apply in 🏛 within 50s');beep(1100,0.15,'square',0.05);}save();}
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 Grant call closed');}}
@@ -1791,33 +2030,42 @@ function update(dt){
   updateFlood(dt);
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 Fire! Everyone grab an extinguisher'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};beep(80,0.8,'sawtooth',0.07);}}
-  updateFire(dt);updateBlackout(dt);
+  updateAI(dt);updateCult(dt);updateFire(dt);updateBlackout(dt);
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ Vacation over — back to work');}
   if(S.semT<20&&S.semT+dt>=20&&S.money<payroll())toast('⚠️ Payroll in 20s: '+fmt(payroll())+' — balance too low!');
   if(S.semCd>0)S.semCd-=dt;if(S.labCd>0)S.labCd-=dt;if(S.labCoffee>0)S.labCoffee-=dt;if(S.bonusCd>0)S.bonusCd-=dt;
   if(S.bonusT>0){S.bonusT-=dt;if(S.bonusT<=0){S.slumpT=15;toast('😮‍💨 Bonus wore off — 15s burnout');}}else if(S.slumpT>0)S.slumpT-=dt;
   if(S.collabCd>0)S.collabCd-=dt;
   if(S.collab){S.collab.t-=dt;if(S.collab.t<=0){const c=COLLABS[S.collab.k];const v=paperValue()*c.papers;S.accepted+=c.papers;S.money+=v;if(c.acc){S.collabBonus=Math.min(0.05,S.collabBonus+c.acc);}toast('🤝 '+c.name+' collaboration done! Papers +'+c.papers+' · +'+fmt(v)+(c.acc?' · accept +1%p permanent':''));beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);S.collab=null;save();}}
+  if(S.lv.counsel>0&&!EASY()){S.counselT=(S.counselT||0)+dt;if(S.counselT>2){S.counselT=0;const af=avgFat();if(af>=70||S.wfat>=85||workers.some(w=>w.fat>=85)){if(S.dinnerCd<=0&&S.money>=dinnerCost()){deptAction('dinner');toast('🧑‍⚕️ Counselor: lab dinner');}else if(S.vacCd<=0&&S.vacT<=0&&(af>=85||workers.some(w=>w.fat>=92))){deptAction('vac');toast('🧑‍⚕️ Counselor: vacation');}}}}
+  if(S.lv.admin2>0){S.admin2T=(S.admin2T||0)+dt;if(S.admin2T>3){S.admin2T=0;
+    if(!S.teach&&S.semT>60)S.teach=true;
+    if(!S.buff&&S.semCd<=0&&S.money>=semCost()*4){deptAction('sem',S.queue>20?'data':'accept');}
+    if(S.bonusCd<=0&&S.bonusT<=0&&S.slumpT<=0&&S.money>=bonusCost()*6&&avgFat()<40)deptAction('bonus');
+    if(!S.collab&&S.collabCd<=0&&S.queue>=15&&S.money>=COLLABS.intl.cost*3)deptAction('collab','intl');}}
+  if(S.lv.recruit>0){S.recruitT=(S.recruitT||0)+dt;if(S.recruitT>2){S.recruitT=0;const tryHire=(k,mult)=>{const lv=S.lv[k];if(lv>=UP[k].max)return false;if(UP[k].unlock&&S.accepted<UP[k].unlock)return false;const cost=UP[k].cost(lv);if(S.money-cost<payroll()*2)return false;S.money-=cost;S.lv[k]++;if(k==='student')layoutStudents();if(k==='reviewer')layoutProfs();if(k==='ms'||k==='phd'||k==='pd')spawnWorker(k);toast('🧑‍💼 Recruiter hired: '+UP[k].name);save();return true;};
+    tryHire('student')||tryHire('reviewer')||tryHire('ms')||tryHire('phd')||tryHire('pd');}}
   if(S.lv.admin>0&&S.call&&!S.grant){S.adminT=(S.adminT||0)+dt;if(S.adminT>3){S.adminT=0;let pick=-1;GRANTS.forEach((g,i)=>{if(grantOk(i)&&S.accepted>=g.need&&S.money>=g.cost)pick=i;});if(pick>=0){const g=GRANTS[pick];spend(g.cost);S.grant={tier:pick,t:g.t};toast('🗂️ Admin staff submitted the '+g.name+' proposal');beep(1000,0.1,'triangle',0.04);}}}
   if(S.buff){S.buff.t-=dt;if(S.buff.t<=0)S.buff=null;}
   if(S.grant){S.grant.t-=dt;if(S.grant.t<=0){const g=GRANTS[S.grant.tier];const pr=grantProb(g);
-    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;S.won[S.grant.tier]=true;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;if(!S.wings[4]&&!EASY()){openWing(WINGS[4],4);}const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 National grant: hired MS '+addMs+' · PhD '+addPhd+' · Data Center opened!'),1800);}toast('🎉 '+g.name+' awarded! +'+fmt(rw)+' · paper value +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
+    if(Math.random()<pr){const rw=Math.round(g.reward*(1+0.25*S.sabb));S.money+=rw;S.grantBonus+=g.bonus;S.won[S.grant.tier]=true;if(S.grant.tier===2)S.leader=true;if(S.grant.tier===3){S.national=true;const addMs=Math.min(3,UP.ms.max-S.lv.ms),addPhd=Math.min(2,UP.phd.max-S.lv.phd);for(let i=0;i<addMs;i++){S.lv.ms++;spawnWorker('ms');}for(let i=0;i<addPhd;i++){S.lv.phd++;spawnWorker('phd');}setTimeout(()=>toast('🎉 National grant: hired MS '+addMs+' · PhD '+addPhd+' mass hire!'),1800);}toast('🎉 '+g.name+' awarded! +'+fmt(rw)+' · paper value +'+Math.round(g.bonus*100)+'%');beep(700,0.3,'triangle',0.06);setTimeout(()=>beep(1050,0.5,'triangle',0.06),160);}
     else{toast('😞 '+g.name+' rejected… next time');beep(180,0.3,'sawtooth',0.05);}
     S.grant=null;save();}}
   if(!S.ended&&S.accepted>=70&&S.national&&S.wings[2]){S.ended=true;save();recordRun('Nobel');showEnding();}
   if(S.money>S._lastMoney){S.earned+=S.money-S._lastMoney;}S._lastMoney=S.money;
-  if(!S.final&&S.earned>=1e8){S.final=true;save();recordRun('God of Research');showFinal();}
+  if(!S.final&&S.earned>=1e8*S.cycle){S.final=true;S.nextFinal=S.earned+5e8;save();recordRun('God of Research');showFinal();}
+  else if(S.final&&S.cycle>=4&&S.earned>=S.nextFinal){S.nextFinal=S.earned+5e8;save();recordRun('God of Research +'+fmt(S.earned));showFinal();}
   updateWorkers(dt);
   updateParty(dt);
   updateGuide();
   timers.save-=dt;if(timers.save<=0){timers.save=5;save();}
   // HUD
-  $('money').textContent=fmt(S.money);
+  if(UI){$('money').textContent=fmt(S.money);
   $('carry').textContent='📄 Data '+S.data+' · 📝 Drafts '+S.drafts+' / '+cap();
-  $('rank').textContent=(EASY()?'🌱 ':'')+S.labName+' · '+title()+' · Papers '+S.accepted+' · Rejects '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚Teaching':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸Bonus'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨Burnout'+Math.ceil(S.slumpT)+'s':'');
+  $('rank').textContent=(S.dev?'🛠 ':'')+(EASY()?'🌱 ':'')+(S.cycle>1?S.cycle+' · ':'')+S.labName+' · '+title()+' · Papers '+S.accepted+' · Rejects '+S.rejected+(S.buff?' · '+BUFFS[S.buff.k].icon+Math.ceil(S.buff.t)+'s':'')+(S.teach?' · 📚Teaching':'')+(S.labCoffee>0?' · ☕☕'+Math.ceil(S.labCoffee)+'s':'')+(S.bonusT>0?' · 💸Bonus'+Math.ceil(S.bonusT)+'s':S.slumpT>0?' · 😮‍💨Burnout'+Math.ceil(S.slumpT)+'s':'');
   const elig=S.call&&!S.grant&&GRANTS.some(g=>S.accepted>=g.need&&S.money>=g.cost);
   $('dept').classList.toggle('blink',!!elig);$('deptArrow').classList.toggle('on',!!elig&&!deptOpen);if(elig)$('deptArrow').textContent='📜 Grant call '+mmss(S.call.t)+' ➜';
-  $('stamFill').style.width=S.stamina+'%';$('stamLab').textContent=S.coffeeT>0?'☕ Caffeine '+Math.ceil(S.coffeeT)+'s':(S.stamina<5?'Exhausted — need coffee':'Stamina');
+  $('stamFill').style.width=S.stamina+'%';$('stamLab').textContent=S.coffeeT>0?'☕ Caffeine '+Math.ceil(S.coffeeT)+'s':(S.stamina<5?'Exhausted — need coffee':'Stamina');}
 }
 const _v=new THREE.Vector3();
 function projectLabel(el,x,y,z){_v.set(x,y,z).project(camera);const w=cv.clientWidth,h=cv.clientHeight;const sx=(_v.x+1)/2*w,sy=(1-_v.y)/2*h;if(_v.z>1||sx<-100||sx>w+100||sy<-50||sy>h+50){el.style.display='none';return;}el.style.left=sx+'px';el.style.top=sy+'px';}
@@ -1830,7 +2078,7 @@ const grantOk=i=>i===0||S.won[i-1];
 const semCost=()=>Math.round(12000+S.accepted*300);
 const COLLABS={dom:{name:'Domestic university',cost:8000,data:8,t:45,papers:1},intl:{name:'Overseas university',cost:30000,data:15,t:60,papers:2,acc:0.01}};
 const bonusCost=()=>(students()+workers.length)*1500;
-const payroll=()=>students()*1000+S.lv.ms*2000+S.lv.phd*3000+S.lv.pd*5000+S.lv.admin*4000+S.wings.filter(Boolean).length*2000;
+const payroll=()=>students()*1000+S.lv.ms*2000+S.lv.phd*3000+S.lv.pd*5000+S.lv.admin*4000+S.lv.counsel*6000+S.lv.admin2*6000+S.robots*3000+S.ai*5000+S.wings.filter(Boolean).length*2000;
 const dinnerCost=()=>(students()+workers.length)*300;
 const avgFat=()=>{const a=[S.wfat,...workers.map(w=>w.fat||0)];return a.reduce((x,y)=>x+y,0)/a.length;};
 let HOF=[];try{HOF=JSON.parse(localStorage.getItem('lab_hof_en')||'[]');}catch(e){}
@@ -1878,6 +2126,20 @@ function showStatus(){
       '<small>Times in KST · visit = page load · device = anonymous per-browser ID · no IP or names collected</small>';
   }).catch(()=>{$('statusBody').innerHTML='<small>Cannot reach the server. Make sure the visits table SQL was run.</small>';});
 }
+const hms=t=>{t=Math.max(0,Math.floor(t));const h=Math.floor(t/3600),m=Math.floor(t%3600/60),sec=t%60;return (h?h+':':'')+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');};
+async function submitTime(kind,seconds){
+  if(EASY()||S.dev||!seconds)return;
+  try{await fetch(SUPA_URL+'/rest/v1/times',{method:'POST',headers:Object.assign({'Prefer':'return=minimal'},supaHeaders),body:JSON.stringify({lab_name:S.labName||'Our Lab',kind,seconds:Math.round(seconds),papers:S.accepted,cycle:S.cycle})});}catch(e){}
+}
+async function fetchTimes(kind){
+  const r=await fetch(SUPA_URL+'/rest/v1/times?select=lab_name,kind,seconds,papers,cycle,created_at&kind=eq.'+kind+'&order=seconds.asc&limit=200',{headers:supaHeaders});
+  if(!r.ok)throw new Error(r.status);const rows=await r.json();const best={};for(const x of rows){if(!best[x.lab_name])best[x.lab_name]=x;}
+  return Object.values(best).sort((a,b)=>a.seconds-b.seconds).slice(0,10);
+}
+function timesHtml(rows,kind){
+  if(!rows.length)return '<small>No records yet — '+(kind==='prof'?'reach Full Professor (70 papers) in cycle 1 and it':'complete the 10-tier pyramid and it')+' is submitted automatically</small>';
+  return rows.map((e,i)=>'<div class="hofrow'+(i<3?' rank'+(i+1):'')+'">'+(i<3?'<span class="medal">'+['🥇','🥈','🥉'][i]+'</span>':'<span class="num">'+(i+1)+'</span>')+'<div><b>'+String(e.lab_name).replace(/[<>]/g,'')+(i===0?' 👑':'')+'</b><br><small>⏱ '+hms(e.seconds)+(kind==='loop'?' · cycle '+e.cycle+'':'')+'</small></div></div>').join('');
+}
 function globalHtml(rows){
   if(!rows.length)return '<small>No records yet — be the first lab</small>';
   return rows.map((e,i)=>'<div class="hofrow'+(i<3?' rank'+(i+1):'')+'">'+(i<3?'<span class="medal">'+['🥇','🥈','🥉'][i]+'</span>':'<span class="num">'+(i+1)+'</span>')+'<div><b>'+String(e.lab_name).replace(/[<>]/g,'')+(i===0?' 👑':'')+'</b><br><small>'+Number(e.score).toLocaleString()+' pts · Papers '+e.papers+' · Alumni '+e.alumni+' · '+fmt(e.earned)+' · '+String(e.ending).replace(/[<>]/g,'')+'</small></div></div>').join('');
@@ -1886,21 +2148,21 @@ function recordRun(end){
   const e={name:S.labName||'Our Lab',papers:S.accepted,alumni:S.alumni,earned:Math.floor(S.earned),natures:S.natures,end,date:new Date().toISOString().slice(0,10)};
   e.score=e.papers*10+e.alumni*50+Math.floor(e.earned/10000)+e.natures*300;
   HOF.push(e);HOF.sort((a,b)=>b.score-a.score);HOF=HOF.slice(0,10);try{localStorage.setItem('lab_hof_en',JSON.stringify(HOF));}catch(err){}
-  if(!EASY())submitScore(e);
+  if(!EASY()&&!S.dev)submitScore(e);
 }
 function hofHtml(){
   if(!HOF.length)return '<small>No records yet — endings, bankruptcy and sabbaticals are recorded</small>';
   return HOF.map((e,i)=>'<div class="hofrow">'+(['🥇','🥈','🥉'][i]||(i+1)+'.')+' <b>'+e.name+'</b> <small>'+e.score.toLocaleString()+' pts · Papers '+e.papers+' · Alumni '+e.alumni+' · '+fmt(e.earned)+' · '+e.end+'</small></div>').join('');
 }
 function hardReload(){try{location.replace(location.pathname+location.search);}catch(e){location.reload();}}
-function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
-function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}restartGame();}
+function lockRun(){try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}NOSAVE=true;}
+function resetRun(){NOSAVE=true;try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:S.deptIntro,labName:S.labName,natures:0}));}catch(e){}restartGame();}
 function gameOver(kind){
   if(S.gameover)return;S.gameover=kind;S.running=false;lockRun();recordRun(kind==='bankrupt'?'Bankrupt':kind==='overwork'?'Overwork':kind==='exodus'?'Students fled':'Quit');
   const lab=S.labName||'Our Lab';
   $('goTitle').textContent=kind==='bankrupt'?'💸 Bankrupt — lab closed':kind==='overwork'?'😵 Overwork — lab dissolved':kind==='exodus'?'🏃 All students fled — advising rights revoked':'🏁 Lab closed';
   $('goBody').innerHTML=(kind==='exodus'?'<p>'+lab+' has no writers left.<br>The club-wielding professor was disciplined by the department.</p><p class="sub">Hitting students builds grudge and raises the chance they flee. Lab dinners calm them.</p>':kind==='quit'?'<p>'+lab+' closes its doors here.<br>Your record is in the Hall of Fame.</p>':kind==='bankrupt'
-    ?'<p>'+lab+' missed payroll two semesters in a row.<br>The students left for other labs and the equipment was seized.</p><p class="sub">Payroll is due every semester. Check the next payroll in 🏛.</p>'
+    ?'<p>'+lab+' could not pay end-of-term payroll and went into the red.<br>The students left for other labs and the equipment was seized.</p><p class="sub">Payroll is due every semester. Check the next payroll in 🏛.</p>'
     :'<p>'+lab+' lost four researchers to overwork.<br>Two labor board reports changed nothing, so the lab was dissolved.</p><p class="sub">Fatigue is shown in 🏛 and lowered with lab dinners and vacations.</p>')+
     '<p class="sub">Papers '+S.accepted+' · Alumni '+S.alumni+' · total funding '+fmt(S.earned)+'</p>';
   $('goBox').classList.remove('hidden');
@@ -1938,8 +2200,8 @@ function renderDept(){
   h+='<div class="sec"><b>👥 Lab Members</b> · Alumni '+S.alumni+' (value +'+S.alumni*2+'%)'+(S.sabb?' · Sabbaticals '+S.sabb+' (income +'+S.sabb*25+'%)':'')+'<br>';
   if(!workers.length)h+='<small>No MS/PhD hired'+(S.accepted<15?' — available after Postdoc rank':'')+'</small>';
   h+='<small>⌨️ Writers '+students()+' — fatigue '+Math.round(S.wfat)+'% · grudge '+Math.round(S.grudge)+'%</small><br>';
-  workers.forEach(w=>{h+='<small>'+(w.kind==='ms'?'🧑‍🔬 MS student':w.kind==='phd'?'🎓 PhD student':'🥼 Postdoc')+' — fatigue '+Math.round(w.fat)+'% · '+(w.kind==='pd'?'gets hired in ':'graduates in ')+mmss(w.grad-w.exp)+'</small><br>';});
-  if(S.lv.admin>0)h+='<small>🗂️ Admin staff — auto-applies to grant calls</small><br>';
+  workers.forEach(w=>{if(w.kind==='robot'){h+='<small>🦾 Robot — no fatigue</small><br>';return;}h+='<small>'+(w.kind==='ms'?'🧑‍🔬 MS student':w.kind==='phd'?'🎓 PhD student':'🥼 Postdoc')+' — fatigue '+Math.round(w.fat)+'% · '+(w.kind==='pd'?'gets hired in ':'graduates in ')+mmss(w.grad-w.exp)+'</small><br>';});
+  if(S.lv.admin>0)h+='<small>🗂️ Admin staff — auto-applies to grant calls</small><br>';if(S.lv.counsel>0)h+='<small>🧑‍⚕️ Counselor — auto dinners & vacations</small><br>';if(S.lv.admin2>0)h+='<small>🗃️ Admin 2 — auto teaching, seminars, bonuses, collabs</small><br>';if(S.lv.recruit>0)h+='<small>🧑‍💼 Recruiter — auto hiring</small><br>';
   h+='</div>';
   $('deptBody').innerHTML=h;
 }
@@ -1951,7 +2213,7 @@ function deptAction(a,k){
   else if(a==='bonus'){if(S.bonusCd>0||S.bonusT>0||S.slumpT>0||!spend(bonusCost()))return;S.bonusT=25;S.bonusCd=90;toast('💸 Bonus paid! Everyone works much faster for 25s');beep(1200,0.15,'triangle',0.05);}
   else if(a==='collab'){const c=COLLABS[k];if(S.collab||S.collabCd>0||S.queue<c.data||!spend(c.cost))return;S.queue-=c.data;refreshPiles();S.collab={k,t:c.t};S.collabCd=90;toast('🤝 '+c.name+' collaboration started — '+c.t+'s until result');}
   else if(a==='grant'){const g=GRANTS[k];if(!S.call||S.grant||!grantOk(+k)||S.accepted<g.need||!spend(g.cost))return;S.grant={tier:+k,t:g.t};toast('📜 '+g.name+' proposal submitted — '+g.t+'s until result');}
-  save();renderDept();
+  save();if(deptOpen)renderDept();
 }
 $('deptBody').addEventListener('click',e=>{const b=e.target.closest('button');if(!b||b.disabled)return;deptAction(b.dataset.a,b.dataset.k);});
 $('dept').addEventListener('click',()=>{deptOpen=true;renderDept();$('deptBox').classList.remove('hidden');});
@@ -1960,9 +2222,12 @@ deptTimer=setInterval(()=>{if(deptOpen)renderDept();},1000);
 function showFinal(){
   S.running=false;
   const lab=S.labName||'Our Lab';
+  $('finalHead').textContent='🌌 This cycle: '+fmt(S.earned>=1e8*S.cycle?Math.floor(S.earned/1e8)*1e8:1e8*S.cycle)+' reached';
+  $('btnFinalSabb').textContent=S.cycle>=4?'🏝️ Retire (ends this run)':'🏝️ Take a sabbatical (ends this run)';$('btnFinalContinue').style.display=S.cycle>=4?'':'none';
+  $('regressNote').textContent=S.cycle>=4?'From cycle 4 this screen returns every extra $500M · the true ending is 1,000 papers = a 10-tier pyramid':'Regress to cycle '+(S.cycle+1)+': Assistant Professor · $1M · side maps open · all students gone'+(S.cycle+1===2?' · counselor & admin 2 hireable':S.cycle+1===3?' · summon AI and build robots in the Data Center':' · found the AI cult in the Wet Lab → 1,000 papers = 10-tier pyramid is the true ending · next milestone '+fmt(1e8*(S.cycle+1)));$('btnRegress').style.display=S.cycle>=4?'none':'';
   $('finalBody').innerHTML=
     '<p class="big" style="font-size:2rem">You are a god of research</p>'+
-    '<p>'+lab+' has raised<br>$100M in total funding.<br>Papers '+S.accepted+' · Alumni '+S.alumni+' · Rejects '+S.rejected+'.</p>'+
+    '<p>'+lab+' earned this cycle<br>'+fmt(Math.max(1e8*S.cycle,Math.floor(S.earned/1e8)*1e8))+'.<br>Papers '+S.accepted+' · Alumni '+S.alumni+' · Rejects '+S.rejected+'.</p>'+
     '<p class="sub">Along the way, equipment broke countless times,<br>Reviewer 2 showed up every time.<br>Grants were rejected, budgets were cut.<br>And still, you never stopped.</p>'+
     '<p class="sub">In a real lab<br>data does not come this easily,<br>and papers are not accepted this fast.</p>'+
     '<p class="sub">And yet you write one more line today.<br>That persistence is worth more than any score here.</p>'+
@@ -1979,18 +2244,26 @@ function showEnding(){
 }
 $('btnIntro').addEventListener('click',()=>{$('introBox').classList.add('hidden');S.running=true;last=performance.now();});
 $('btnGoRetry').addEventListener('click',resetRun);
+$('btnLoopContinue').addEventListener('click',()=>{$('loopBox').classList.add('hidden');S.running=true;last=performance.now();});
+armButton($('btnLoopNew'),resetRun);
 let rankMode='week';
 function openRank(){$('hofList').innerHTML=hofHtml();$('hofBox').classList.remove('hidden');loadRank();}
-function loadRank(){$('globalList').innerHTML='<small>Loading…</small>';$('tabWeek').classList.toggle('on',rankMode==='week');$('tabAll').classList.toggle('on',rankMode!=='week');$('rankNote').textContent=rankMode==='week'?'Best labs this week (Mon–Sun, KST) · one entry per lab name':'All-time best · one entry per lab name';(rankMode==='week'?fetchWeekTop():fetchTop()).then(rows=>{$('globalList').innerHTML=globalHtml(rows);}).catch(()=>{$('globalList').innerHTML='<small>Cannot reach the ranking server. Try again later.</small>';});}
+function loadRank(){$('globalList').innerHTML='<small>Loading…</small>';['week','all','prof','loop'].forEach(m=>$('tab'+m[0].toUpperCase()+m.slice(1)).classList.toggle('on',rankMode===m));$('rankNote').textContent=rankMode==='week'?'Best labs this week (Mon–Sun, KST) · one entry per lab name':rankMode==='all'?'All-time best · one entry per lab name':rankMode==='prof'?'Real play time from cycle 1 to Full Professor (70 papers) · shorter is better':'Real play time from cycle 1 to the 10-tier pyramid · shorter is better';const pr=rankMode==='week'?fetchWeekTop():rankMode==='all'?fetchTop():fetchTimes(rankMode);pr.then(rows=>{$('globalList').innerHTML=(rankMode==='prof'||rankMode==='loop')?timesHtml(rows,rankMode):globalHtml(rows);}).catch(()=>{$('globalList').innerHTML='<small>Cannot reach the ranking server. Try again later.</small>';});}
 $('btnRank').addEventListener('click',openRank);$('btnRankStart').addEventListener('click',openRank);
-$('tabWeek').addEventListener('click',()=>{rankMode='week';loadRank();});$('tabAll').addEventListener('click',()=>{rankMode='all';loadRank();});
+$('tabWeek').addEventListener('click',()=>{rankMode='week';loadRank();});$('tabAll').addEventListener('click',()=>{rankMode='all';loadRank();});$('tabProf').addEventListener('click',()=>{rankMode='prof';loadRank();});$('tabLoop').addEventListener('click',()=>{rankMode='loop';loadRank();});
 $('btnStatusClose').addEventListener('click',()=>{$('statusBox').classList.add('hidden');});
 $('btnHofClose').addEventListener('click',()=>$('hofBox').classList.add('hidden'));
 armButton($('btnQuit'),()=>{$('menuBox').classList.add('hidden');gameOver('quit');});
 $('btnFinalContinue').addEventListener('click',()=>{$('finalBox').classList.add('hidden');S.running=true;last=performance.now();});
-armButton($('btnFinalSabb'),doSabbatical);
+armButton($('btnFinalSabb'),doSabbatical);armButton($('btnRegress'),doRegress);
 $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hidden');S.running=true;last=performance.now();});
-function doSabbatical(){recordRun('Sabbatical');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}restartGame();}
+function doRegress(){
+  recordRun('Cycle '+(S.cycle+1)+'');NOSAVE=true;try{localStorage.setItem('lab_flash','regress');}catch(e){}$('finalBox').classList.add('hidden');
+  const c=S.cycle+1;
+  try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:1000000,lv:{student:-1,write:2,reviewer:1,bag:2,club:2,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},ai:0,robots:0,cult:0,pyr:0,accepted:20,rejected:0,wings:[true,true,true,true,true],pile:0,queue:0,sem:1,grantBonus:0.15,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:true,labName:S.labName,natures:0,cycle:c,won:[true,true,false,false],playT:S.playT,profT:S.profT}));}catch(e){}
+  restartGame();
+}
+function doSabbatical(){recordRun('Sabbatical');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}restartGame();}
 armButton($('btnSabb'),doSabbatical);
 
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')save();});
@@ -2004,7 +2277,8 @@ function importCode(code){try{const j=JSON.parse(decodeURIComponent(escape(atob(
 window.__gameStop=function(){STOPPED=true;NOSAVE=true;S.running=false;try{if(BGM.timer){clearInterval(BGM.timer);BGM.timer=null;}if(deptTimer)clearInterval(deptTimer);if(AC&&AC.close)AC.close();}catch(e){}};
 function restartGame(){NOSAVE=true;if(window.__restartGame){try{window.__restartGame();return;}catch(e){}}hardReload();}
 let last=performance.now();
-function loop(now){if(STOPPED)return;const dt=Math.min(0.05,(now-last)/1000)*0.8*SET.spd;last=now;if(S.running)update(dt);renderer.render(scene,camera);requestAnimationFrame(loop);}
+let lastRender=0;
+function loop(now){if(STOPPED)return;requestAnimationFrame(loop);if(SET.low&&now-lastRender<31)return;lastRender=now;const real=Math.min(0.08,(now-last)/1000);const dt=real*0.8*SET.spd;last=now;if(S.running){S.playT+=real;update(dt);}renderer.render(scene,camera);}
 
 function chooseMode(m){if(m!==MODE){NOSAVE=true;try{localStorage.setItem('lab_mode',m);}catch(e){}restartGame();return;}start();}
 function start(){const raw=($('labName').value||'').trim();const code=raw.toLowerCase();const cheat=code==='developer-ending'?'final':code==='developer-nobel'?'nobel':code==='developer-nature'?'nature':code==='developer-status'?'status':null;
@@ -2016,25 +2290,33 @@ $('btnSaveClose').addEventListener('click',()=>{save();toast('💾 Saved — you
 if(/Instagram|FBAN|FBAV|KAKAOTALK|NAVER\(|Line\//i.test(navigator.userAgent||''))$('inappNote').style.display='block';
 $('modeNote').textContent=EASY()?'Current: 🌱 Easy Mode — practice without disasters, new maps or ranking':'Current: 🔥 Hell Mode — blackouts, fires, floods · new maps · ranking';
 $('mute').addEventListener('click',()=>{audio();setMute(!muted);});
-$('menu').addEventListener('click',()=>{S.running=false;$('volRange').value=SET.vol;$('volLab').textContent=Math.round(SET.vol*100)+'%';$('spdRange').value=SET.spd;$('spdLab').textContent=SET.spd.toFixed(1)+'x';$('saveMsg').textContent=lastSaved?'Last saved '+lastSaved.toLocaleTimeString():'';$('menuStats').innerHTML='Papers '+S.accepted+' · Rejects '+S.rejected+' · accept '+Math.round(acceptRate()*100)+'%<br>Writers '+students()+' · Reviewers '+reviewers()+' · Bag '+cap()+' · Club '+dmg()+'<br>MS students '+S.lv.ms+' · PhD '+S.lv.phd+' · Postdocs '+S.lv.pd+'<br>🌟 Nature (incl. sister journals) '+S.natures+'';$('menuBox').classList.remove('hidden');});
+$('menu').addEventListener('click',()=>{S.running=false;$('volRange').value=SET.vol;$('volLab').textContent=Math.round(SET.vol*100)+'%';$('spdRange').value=SET.spd;$('spdLab').textContent=SET.spd.toFixed(1)+'x';$('lowChk').checked=SET.low;$('saveMsg').textContent=lastSaved?'Last saved '+lastSaved.toLocaleTimeString():'';$('menuStats').innerHTML='Papers '+S.accepted+' · Rejects '+S.rejected+' · accept '+Math.round(acceptRate()*100)+'%<br>Writers '+students()+' · Reviewers '+reviewers()+' · Bag '+cap()+' · Club '+dmg()+'<br>MS students '+S.lv.ms+' · PhD '+S.lv.phd+' · Postdocs '+S.lv.pd+''+(S.cycle>1?' · '+S.cycle+'':'')+'<br>🌟 Nature (incl. sister journals) '+S.natures+'<br>⏱ Play time '+hms(S.playT)+(S.profT?' · Professor '+hms(S.profT):'')+(S.loopT?' · Loop '+hms(S.loopT):'')+'';$('menuBox').classList.remove('hidden');});
 $('btnResume').addEventListener('click',()=>{$('menuBox').classList.add('hidden');S.running=true;last=performance.now();});
 armButton($('btnReset'),()=>{NOSAVE=true;try{localStorage.removeItem(SAVE_KEY());}catch(e){}$('menuBox').classList.add('hidden');restartGame();});
 $('volRange').addEventListener('input',e=>{SET.vol=+e.target.value;$('volLab').textContent=Math.round(SET.vol*100)+'%';if(MASTER&&!muted)MASTER.gain.setTargetAtTime(SET.vol,AC.currentTime,0.05);saveSettings();});
 $('spdRange').addEventListener('input',e=>{SET.spd=+e.target.value;$('spdLab').textContent=SET.spd.toFixed(1)+'x';saveSettings();});
+$('lowChk').addEventListener('change',e=>{SET.low=e.target.checked;saveSettings();applyQuality();resize();toast(SET.low?'🔋 Low-power mode on':'⚡ High-quality mode (may get warm)');});
 $('btnExport').addEventListener('click',()=>{const code=exportCode();$('saveCode').value=code;$('saveCode').select();let ok=false;try{document.execCommand('copy');ok=true;}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(code).then(()=>{$('saveMsg').textContent='Copied — paste it somewhere safe';}).catch(()=>{$('saveMsg').textContent=ok?'Copied':'Long-press the code below to copy';});else $('saveMsg').textContent=ok?'Copied':'Long-press the code below to copy';});
 function devCommand(c){
   c=c.trim().toLowerCase();if(!c.startsWith('developer-'))return false;
-  const k=c.slice(10);$('menuBox').classList.add('hidden');S.running=true;last=performance.now();
+  const k=c.slice(10);if(!S.dev){S.dev=true;save();toast('🛠 Developer mode — this save will not be ranked');}$('menuBox').classList.add('hidden');S.running=true;last=performance.now();
   if(k==='nature')startParty('nature');else if(k==='sister')startParty('sister');
   else if(k==='fire'){if(!S.fire)startFire();}
   else if(k==='dark'||k==='blackout'){S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};}
   else if(k==='flood')startFlood();
   else if(k==='ending')showFinal();else if(k==='nobel')showEnding();else if(k==='status'){S.running=false;showStatus();}
-  else if(k==='money'){S.money+=1000000;toast('💰 +$1M');}
+  else if(k==='money'){S.money+=50000000;toast('💰 +$50M');}
+  else if(/^money\d+$/.test(k)){const m=+k.slice(5)*1e6;S.money+=m;toast('💰 +'+fmt(m));}
+  else if(k==='cycle2'||k==='cycle3'||k==='cycle4'){S.cycle=+k.slice(5);S.wings=[true,true,true,true,true];applyWings();S.deptIntro=true;if(S.accepted<20)S.accepted=20;toast('🌀 Cycle '+S.cycle+' set — side maps open');}
+  else if(/^ending[1-4]$/.test(k)){S.cycle=+k.slice(6);S.wings=[true,true,true,true,true];applyWings();S.earned=Math.max(S.earned,1e8*S.cycle);S.final=true;S.nextFinal=S.earned+5e8;showFinal();}
+  else if(k==='loop'){S.cycle=4;S.wings=[true,true,true,true,true];applyWings();if(!S.cult)startCult();S.accepted=S.cultBase+1000;S.loop=true;showLoop();}
+  else if(k==='cult'){if(S.cycle<4)S.cycle=4;S.wings=[true,true,true,true,true];applyWings();if(!S.cult)startCult();}
+  else if(k==='pyramid'){if(!S.cult){S.cycle=4;S.wings=[true,true,true,true,true];applyWings();startCult();}S.accepted=S.cultBase+900;toast('🔺 Tier 900 papers since founding — 9 tiers built');}
   else if(k==='papers'){S.accepted+=10;toast('📄 Papers +10');}
+  else if(/^paper\d+$/.test(k)){S.accepted=+k.slice(5);toast('📄 Papers '+S.accepted+' papers set');}
   else if(k==='call'){S.call={t:50};toast('📜 Grant call forced open');}
   else if(k==='open'){[1,2,3,4].forEach(i=>{if(!S.wings[i])openWing(WINGS[i],i);});}
-  else if(k==='hire'){['ms','ms','phd','pd'].forEach(x=>{S.lv[x]++;spawnWorker(x);});S.lv.admin=1;spawnAdmin();}
+  else if(k==='hire'){['student','write','reviewer','bag','club'].forEach(x=>{S.lv[x]=UP[x].max;});layoutStudents();layoutProfs();['ms','phd','pd'].forEach(x=>{while(S.lv[x]<UP[x].max){S.lv[x]++;spawnWorker(x);}});S.lv.admin=1;spawnAdmin();if(S.cycle>=2){S.lv.counsel=1;S.lv.admin2=1;}if(S.cycle>=3){S.lv.recruit=1;while(S.robots<4){S.robots++;spawnWorker('robot');}if(S.ai<1){S.ai=1;summonAI();}}toast('🛠 Everyone hireable summoned');}
   else{toast('❓ Unknown developer command: '+k);return true;}
   toast('🛠 '+c);return true;
 }
@@ -2043,8 +2325,10 @@ armButton($('btnImport'),()=>{if(devCommand($('saveCode').value)){$('saveCode').
 $('verNote').textContent='v'+VERSION;logVisit();let FLASH='';try{FLASH=localStorage.getItem('lab_flash')||'';if(FLASH)localStorage.removeItem('lab_flash');}catch(e){}$('langToggle').addEventListener('click',e=>{e.preventDefault();try{localStorage.setItem('lab_lang',LANG==='ko'?'en':'ko');}catch(err){}restartGame();});
 if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[Easy] ':'[Hell] ')+'Saved progress loaded — Papers '+S.accepted+' · '+fmt(S.money);}
 if(FLASH==='sabb')$('saveNote').textContent='🏝️ Back from sabbatical — new lab · alumni bonus kept';
+if(FLASH==='regress'){setTimeout(()=>{start();toast('🌀 Cycle '+S.cycle+' begins — "Back when I was a grad student…"');},80);}
+if(FLASH==='regress')$('saveNote').textContent='🌀 Cycle '+S.cycle+' — Assistant Professor · $1M · side maps open · no students. "Back when I was a grad student…"'+(S.cycle>=4?' · found the 🛐 AI cult in the Wet Lab':S.cycle>=3?' · summon 🤖 AI and build 🦾 robots in the Data Center':'');
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
-for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');if(S.lv.admin>0)spawnAdmin();
+for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');for(let i=0;i<S.robots;i++)spawnWorker('robot');if(S.lv.admin>0)spawnAdmin();
 camera.position.set(0,21,19.5);camera.lookAt(0,0.5,1.5);
 requestAnimationFrame(loop);
 })();
