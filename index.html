@@ -92,6 +92,10 @@ canvas{display:block;width:100%;height:100%}
 .overlay.scroll .steps{font-size:.88rem;line-height:1.55}
 .overlay.scroll p{margin:4px 0;font-size:.95rem}
 .overlay.scroll .sub{font-size:.85rem}
+#debtTint{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(ellipse at center,rgba(255,0,0,.05) 40%,rgba(255,0,0,.55) 100%);animation:debtFlash .6s infinite alternate}
+#debtTint.on{opacity:1}
+#debtTint .debtMsg{position:absolute;left:50%;top:32%;transform:translateX(-50%);background:rgba(160,0,0,.85);color:#fff;font-weight:900;font-size:1.05rem;padding:10px 16px;border-radius:12px;white-space:nowrap;border:2px solid #ff5f6d}
+@keyframes debtFlash{from{filter:brightness(1)}to{filter:brightness(1.6)}}
 #toast{position:absolute;left:50%;bottom:calc(60px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel);padding:8px 14px;border-radius:10px;font-weight:700;font-size:.9rem;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -113,6 +117,7 @@ canvas{display:block;width:100%;height:100%}
   <div class="hud" id="stam"><div class="bar"><div class="fill" id="stamFill"></div></div><div class="lab" id="stamLab">체력</div></div>
   <div id="toast"></div>
   <div id="fireTint"></div>
+  <div id="debtTint"><div class="debtMsg">🚨 잔고 마이너스 — 15초 안에 연구비를 채우세요</div></div>
   <div id="partyPop"></div>
 
   <div id="start" class="overlay scroll">
@@ -189,7 +194,7 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ 안식년 떠나기 (종료)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.6.4</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.7.1</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
@@ -215,7 +220,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.6.4';const LANG='ko';
+const VERSION='2.7.1';const LANG='ko';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -226,7 +231,11 @@ const SAVE_KEY=()=>'lab_save_'+MODE;const EASY=()=>MODE==='easy';
 try{muted=localStorage.getItem('lab_mute')==='1';const j=JSON.parse(localStorage.getItem('lab_settings')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);if(typeof j.low==='boolean')SET.low=j.low;}}catch(e){}
 function saveSettings(){try{localStorage.setItem('lab_settings',JSON.stringify(SET));}catch(e){}}
 function audio(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=muted?0:SET.vol;MASTER.connect(AC.destination);}catch(e){}return AC;}
-function beep(f,d,type,g){try{if(!audio())return;if(AC.state==='suspended')AC.resume();const o=AC.createOscillator(),v=AC.createGain();o.type=type||'square';o.frequency.value=f;v.gain.value=g||0.04;o.connect(v);v.connect(MASTER);o.start();v.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.08));o.stop(AC.currentTime+(d||0.08));}catch(e){}}
+function ensureAudio(){try{if(!AC)return;if(AC.state==='closed'){AC=null;MASTER=null;audio();if(BGM.timer)BGM.nextT=0;return;}if(AC.state!=='running'){const p=AC.resume();if(p&&p.then)p.then(()=>{if(BGM.timer)BGM.nextT=Math.max(BGM.nextT,AC.currentTime+0.05);}).catch(()=>{});}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')ensureAudio();});
+window.addEventListener('pageshow',ensureAudio);window.addEventListener('focus',ensureAudio);
+document.addEventListener('pointerdown',ensureAudio,{passive:true});document.addEventListener('touchend',ensureAudio,{passive:true});
+function beep(f,d,type,g){try{if(!audio())return;if(AC.state!=='running')ensureAudio();const o=AC.createOscillator(),v=AC.createGain();o.type=type||'square';o.frequency.value=f;v.gain.value=g||0.04;o.connect(v);v.connect(MASTER);o.start();v.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.08));o.stop(AC.currentTime+(d||0.08));}catch(e){}}
 const midi=n=>440*Math.pow(2,(n-69)/12);
 const SONG={bpm:120,
   mel:[67,0,71,0,74,0,71,0, 69,0,72,0,76,0,72,0, 67,0,71,0,74,0,79,0, 78,0,76,0,74,0,71,0],
@@ -234,15 +243,15 @@ const SONG={bpm:120,
   arp:[55,59,62,59, 57,60,64,60, 55,59,62,59, 50,54,57,54, 55,59,62,59, 57,60,64,60, 55,59,62,59, 50,54,57,54]};
 const BGM={step:0,nextT:0,timer:null};
 function tone(n,t,dur,type,g){const o=AC.createOscillator(),v=AC.createGain();o.type=type;o.frequency.setValueAtTime(midi(n),t);v.gain.setValueAtTime(0.0001,t);v.gain.exponentialRampToValueAtTime(g,t+0.01);v.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(v);v.connect(MASTER);o.start(t);o.stop(t+dur+0.02);}
-function bgmTick(){if(!AC||!S.running)return;const sd=60/SONG.bpm/4;while(BGM.nextT<AC.currentTime+0.2){const i=BGM.step%32,t=BGM.nextT;if(SONG.mel[i])tone(SONG.mel[i],t,sd*1.7,'triangle',0.05);if(SONG.bass[i])tone(SONG.bass[i],t,sd*2.2,'sine',0.11);tone(SONG.arp[i],t,sd*0.8,'square',0.012);BGM.step++;BGM.nextT+=sd;}}
-function bgmStart(){if(!audio())return;if(AC.state==='suspended')AC.resume();BGM.nextT=AC.currentTime+0.05;if(!BGM.timer)BGM.timer=setInterval(bgmTick,50);}
+function bgmTick(){if(!AC||!S.running||AC.state!=='running')return;const sd=60/SONG.bpm/4;if(BGM.nextT<AC.currentTime-1)BGM.nextT=AC.currentTime+0.05;while(BGM.nextT<AC.currentTime+0.2){const i=BGM.step%32,t=BGM.nextT;if(SONG.mel[i])tone(SONG.mel[i],t,sd*1.7,'triangle',0.05);if(SONG.bass[i])tone(SONG.bass[i],t,sd*2.2,'sine',0.11);tone(SONG.arp[i],t,sd*0.8,'square',0.012);BGM.step++;BGM.nextT+=sd;}}
+function bgmStart(){if(!audio())return;ensureAudio();BGM.nextT=AC.currentTime+0.05;if(!BGM.timer)BGM.timer=setInterval(bgmTick,50);}
 function setMute(m){muted=m;try{localStorage.setItem('lab_mute',m?'1':'0');}catch(e){}if(MASTER)MASTER.gain.setTargetAtTime(m?0:SET.vol,AC.currentTime,0.05);$('mute').textContent=m?'🔇':'🔊';}
 
 /* ---------------- game state ---------------- */
 const UP={
   student:{name:'집필 학생 충원',icon:'🧑‍🎓',cost:l=>Math.round(6000*Math.pow(1.65,l)),get max(){return 8+(S.cycle-1)*2;},desc:l=>'초고 쓰는 학생 '+(1+l)+' → '+(2+l)+'명'},
   write:{name:'집필 속도',icon:'⌨️',cost:l=>Math.round(9000*Math.pow(1.7,l)),max:6,desc:l=>'Lv '+l+' → '+(l+1)},
-  reviewer:{name:'리뷰어 교수',icon:'🧑‍🏫',cost:l=>Math.round(16000*Math.pow(1.9,l)),max:4,desc:l=>'리뷰어 '+(1+l)+' → '+(2+l)+'명 · 채택률↑'},
+  reviewer:{name:'리뷰어 교수',icon:'🧑‍🏫',cost:l=>Math.round(16000*Math.pow(1.9,l)),get max(){return 4+(S.cycle-1)*2;},desc:l=>'리뷰어 '+(1+l)+' → '+(2+l)+'명 · 채택률↑'},
   bag:{name:'가방 용량',icon:'🎒',cost:l=>Math.round(5000*Math.pow(1.6,l)),max:8,desc:l=>(10+3*l)+' → '+(13+3*l)},
   club:{name:'몽둥이 강화',icon:'🏏',cost:l=>Math.round(7500*Math.pow(1.8,l)),max:6,desc:l=>'피해 '+(2+l)+' → '+(3+l)},
   ms:{name:'석사생 고용',icon:'🧑‍🔬',cost:l=>Math.round(45000*Math.pow(1.6,l)),get max(){return 9+(S.cycle-1)*2;},unlock:10,desc:l=>'1·2번 랩 장비만 담당 · 데이터 자동 수집 '+l+' → '+(l+1)+'명'},
@@ -369,7 +378,7 @@ addZone({kind:'coffee',x:11,z:7.5,r:1.4,color:0xff8a3d,y:2});
 addZone({kind:'labcoffee',x:14,z:9.6,r:1.4,color:0xff5a1f,y:2});
 addZone({kind:'ai',x:29,z:-24,r:1.6,color:0x00e5ff,y:2});addZone({kind:'cult',x:-24,z:-24.5,r:2.2,color:0x111111,y:2.4});addZone({kind:'robot',x:19,z:-24,r:1.6,color:0x39ff14,y:2});scene.add(box(1.2,1.2,0.8,0x442,14,0.6,11.4));
 const PADS={student:[-11,10.5],write:[-6.6,10.5],reviewer:[-2.2,10.5],bag:[2.2,10.5],club:[6.6,10.5],ms:[-14.2,5.2],phd:[-14.2,9.6],pd:[-14.2,-4.8],admin:[14,4.6],counsel:[4.4,7.2],admin2:[8,7.2],recruit:[-19,7.2]};
-Object.keys(PADS).forEach(k=>{const [x,z]=PADS[k];const hire=!!UP[k].unlock;addZone({kind:'up',key:k,x,z,r:1.35,color:hire?0x22c55e:0xb388ff,y:1.6});scene.add(box(hire?0.6:1.2,0.9,hire?1.2:0.6,hire?0x2a7a4a:0x6b5aa8,hire?x-1.4:x,0.45,hire?z:z+1.7));});
+Object.keys(PADS).forEach(k=>{const [x,z]=PADS[k];const hire=!!UP[k].unlock;const z0=addZone({kind:'up',key:k,x,z,r:1.35,color:hire?0x22c55e:0xb388ff,y:1.6});z0.kiosk=box(hire?0.6:1.2,0.9,hire?1.2:0.6,hire?0x2a7a4a:0x6b5aa8,hire?x-1.4:x,0.45,hire?z:z+1.7);scene.add(z0.kiosk);});
 // wings
 const TYPES={
   micro:{name:'현미경',hp:5,drop:4,repair:25,build:g=>{g.add(box(1.3,0.25,1.0,0x7a8aa0,0,0.12,0));g.add(cyl(0.12,0.12,1.0,0x555,0.25,0.75,0));g.add(box(0.3,0.5,0.3,0x3fb0c8,0.25,1.4,0));g.add(box(0.5,0.1,0.5,0xddd,-0.2,0.5,0));}},
@@ -819,8 +828,9 @@ function update(dt){
       if(inside&&S.labCd<=0&&S.money>=cost){spend(cost);S.labCoffee=20;S.labCd=60;S.stamina=100;beep(1300,0.12,'sine',0.05);pop(p.x,2.2,p.z,'☕☕ 랩 전체 각성!','#ff5a1f');toast('☕☕ 랩 전체 커피 — 20초간 전원 능률 상승');}
     }else if(z.kind==='up'){
       const k=z.key,lv=S.lv[k];
-      if(UP[k].cycle&&S.cycle<UP[k].cycle){html='🌀 '+UP[k].name+'<small>'+UP[k].cycle+'회차부터 고용 가능</small>';cls='no';}
-      else if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'조교수':'포닥')+' 승급(논문 '+UP[k].unlock+'편) 시 개방 · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
+      if(UP[k].cycle&&S.cycle<UP[k].cycle){z.el.style.display='none';z.ring.visible=false;if(z.kiosk)z.kiosk.visible=false;continue;}
+      z.ring.visible=true;if(z.kiosk)z.kiosk.visible=true;
+      if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'조교수':'포닥')+' 승급(논문 '+UP[k].unlock+'편) 시 개방 · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
       else if(lv>=UP[k].max){html=UP[k].icon+' '+UP[k].name+'<small>MAX</small>';cls='no';}
       else{const cost=UP[k].cost(lv);html=UP[k].icon+' '+UP[k].name+' '+fmt(cost)+'<small>'+UP[k].desc(lv)+'</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
         if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;doUpgrade(z);}}
@@ -899,7 +909,7 @@ function update(dt){
 
   // semester / teaching
   S.semT-=dt;
-  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 학기 종료 · 강의료 +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0&&!EASY()){gameOver('bankrupt');return;}if(S.money<0){S.money=0;toast('💸 인건비 '+fmt(pay)+' 지급 — 잔고 부족! 다음 학기까지 갚지 못하면 파산');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 학기말 인건비 '+fmt(pay)+' 지급');if(S.debtT)S.debtT=0;}
+  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 학기 종료 · 강의료 +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0&&!EASY()){S.debtGrace=15;$('debtTint').classList.add('on');beep(120,0.8,'sawtooth',0.08);toast('🚨 잔고 마이너스! 15초 안에 연구비를 채우지 못하면 파산');}if(S.money<0&&EASY()){S.money=0;toast('💸 인건비 '+fmt(pay)+' 지급 — 잔고 부족! 다음 학기까지 갚지 못하면 파산');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 학기말 인건비 '+fmt(pay)+' 지급');if(S.debtT)S.debtT=0;}
   if(S.money<0&&S.debtT>=2&&!EASY()){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
   if(S.accepted>=20){S.call={t:50};toast('📜 과제 공고 시작 — 50초 안에 🏛에서 지원');beep(1100,0.15,'square',0.05);}save();}
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 과제 공고 마감');}}
@@ -913,6 +923,7 @@ function update(dt){
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 화재 발생! 모두 소화기를 들어라'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};beep(80,0.8,'sawtooth',0.07);}}
   updateAI(dt);updateCult(dt);updateFire(dt);updateBlackout(dt);
+  if(S.debtGrace>0){if(S.money>=0){S.debtGrace=0;$('debtTint').classList.remove('on');toast('✅ 잔고 회복 — 파산 위기 해제');if(!S.event)$('banner').classList.remove('on');}else{S.debtGrace-=dt;$('banner').textContent='🚨 파산 경고 '+Math.ceil(S.debtGrace)+'초 — 잔고 '+fmt(S.money)+' · 논문 제출·헌금·과제로 채우세요';$('banner').classList.add('on');if(S.debtGrace<=0){$('debtTint').classList.remove('on');gameOver('bankrupt');return;}}}
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ 휴가 끝 — 다시 출근');}
   if(S.semT<20&&S.semT+dt>=20&&S.money<payroll())toast('⚠️ 20초 뒤 인건비 '+fmt(payroll())+' — 잔고 부족!');
   if(S.semCd>0)S.semCd-=dt;if(S.labCd>0)S.labCd-=dt;if(S.labCoffee>0)S.labCoffee-=dt;if(S.bonusCd>0)S.bonusCd-=dt;
@@ -1044,7 +1055,7 @@ function gameOver(kind){
   const lab=S.labName||'우리 연구실';
   $('goTitle').textContent=kind==='bankrupt'?'💸 파산 — 연구실 폐쇄':kind==='overwork'?'😵 과로 — 연구실 해체':kind==='exodus'?'🏃 학생 전원 도주 — 지도 자격 박탈':'🏁 연구실 운영 종료';
   $('goBody').innerHTML=(kind==='exodus'?'<p>'+lab+'의 집필 학생이 한 명도 남지 않았습니다.<br>몽둥이로 학생을 다스리던 교수는 학과 징계를 받았습니다.</p><p class="sub">학생을 때릴수록 불만이 쌓이고 도주 확률이 올라갑니다. 회식으로 달래세요.</p>':kind==='quit'?'<p>'+lab+'의 운영을 여기서 마칩니다.<br>기록은 명예의 전당에 남았습니다.</p>':kind==='bankrupt'
-    ?'<p>'+lab+'이 학기말 인건비를 주지 못해 잔고가 마이너스가 됐습니다.<br>학생들은 다른 랩으로 떠났고 장비는 압류됐습니다.</p><p class="sub">고정비는 학기말마다 나갑니다. 🏛 탭에서 다음 인건비를 미리 확인하세요.</p>'
+    ?'<p>'+lab+'이 인건비를 주지 못했고 15초 안에 연구비를 채우지 못했습니다.<br>학생들은 다른 랩으로 떠났고 장비는 압류됐습니다.</p><p class="sub">고정비는 학기말마다 나갑니다. 🏛 탭에서 다음 인건비를 미리 확인하세요.</p>'
     :'<p>'+lab+'에서 연구원 네 명이 과로로 떠났습니다.<br>노동청 신고 두 번 뒤에도 바뀐 게 없어 연구실은 해체됐습니다.</p><p class="sub">피로도는 🏛 탭에서 보이고 회식과 휴가로 내릴 수 있습니다.</p>')+
     '<p class="sub">논문 '+S.accepted+'편 · 졸업생 '+S.alumni+'명 · 누적 연구비 '+fmt(S.earned)+'</p>';
   $('goBox').classList.remove('hidden');
@@ -1106,7 +1117,7 @@ function showFinal(){
   const lab=S.labName||'우리 연구실';
   $('finalHead').textContent='🌌 이번 회차 연구비 '+fmt(S.earned>=1e8*S.cycle?Math.floor(S.earned/1e8)*1e8:1e8*S.cycle)+' 달성';
   $('btnFinalSabb').textContent=S.cycle>=4?'🏝️ 은퇴 (종료)':'🏝️ 안식년 떠나기 (종료)';$('btnFinalContinue').style.display=S.cycle>=4?'':'none';
-  $('regressNote').textContent=S.cycle>=4?'4회차부터는 $500M을 더 벌 때마다 이 화면이 다시 뜹니다 · 진엔딩은 논문 1,000편 = 피라미드 10층':'회귀하면 '+(S.cycle+1)+'회차: 조교수 · $1M · 양옆 맵 개방 · 학생 전원 이탈'+(S.cycle+1===2?' · 상담사·행정직원2 고용 가능':S.cycle+1===3?' · 데이터센터에서 AI 소환·로봇 제작':' · Wet Lab에서 AI 교단 설립 → 논문 1,000편 = 피라미드 10층이 진엔딩 · 클리어 기준 '+fmt(1e8*(S.cycle+1)));$('btnRegress').style.display=S.cycle>=4?'none':'';
+  $('regressNote').textContent=S.cycle>=4?'4회차부터는 $500M을 더 벌 때마다 이 화면이 다시 뜹니다 · 진엔딩은 논문 1,000편 = 피라미드 10층':'회귀하면 '+(S.cycle+1)+'회차: 조교수 · '+fmt((S.cycle+1)*1e6)+' · 양옆 맵 개방 · 학생 전원 이탈'+(S.cycle+1===2?' · 상담사·행정직원2 고용 가능':S.cycle+1===3?' · 데이터센터에서 AI 소환·로봇 제작':' · Wet Lab에서 AI 교단 설립 → 논문 1,000편 = 피라미드 10층이 진엔딩 · 클리어 기준 '+fmt(1e8*(S.cycle+1)));$('btnRegress').style.display=S.cycle>=4?'none':'';
   $('finalBody').innerHTML=
     '<p class="big" style="font-size:2rem">당신은 연구의 신</p>'+
     '<p>'+lab+'이 이번 회차에<br>'+fmt(Math.max(1e8*S.cycle,Math.floor(S.earned/1e8)*1e8))+'를 벌었습니다.<br>논문 '+S.accepted+'편 · 졸업생 '+S.alumni+'명 · 리젝 '+S.rejected+'번.</p>'+
@@ -1142,7 +1153,7 @@ $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hid
 function doRegress(){
   recordRun('회귀 '+(S.cycle+1)+'회차');NOSAVE=true;try{localStorage.setItem('lab_flash','regress');}catch(e){}$('finalBox').classList.add('hidden');
   const c=S.cycle+1;
-  try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:1000000,lv:{student:-1,write:2,reviewer:1,bag:2,club:2,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},ai:0,robots:0,cult:0,pyr:0,accepted:20,rejected:0,wings:[true,true,true,true,true],pile:0,queue:0,sem:1,grantBonus:0.15,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:true,labName:S.labName,natures:0,cycle:c,won:[true,true,false,false],playT:S.playT,profT:S.profT}));}catch(e){}
+  try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:c*1000000,lv:{student:-1,write:2,reviewer:1,bag:2,club:2,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},ai:0,robots:0,cult:0,pyr:0,accepted:20,rejected:0,wings:[true,true,true,true,true],pile:0,queue:0,sem:1,grantBonus:0.15,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:true,labName:S.labName,natures:0,cycle:c,won:[true,true,false,false],playT:S.playT,profT:S.profT}));}catch(e){}
   restartGame();
 }
 function doSabbatical(){recordRun('안식년');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}restartGame();}
@@ -1208,7 +1219,7 @@ $('verNote').textContent='v'+VERSION;logVisit();let FLASH='';try{FLASH=localStor
 if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[이지] ':'[헬조선] ')+'저장된 진행 상황을 불러왔습니다 — 논문 '+S.accepted+'편 · '+fmt(S.money);}
 if(FLASH==='sabb')$('saveNote').textContent='🏝️ 안식년에서 복귀 — 새 연구실 시작 · 졸업생 보너스 유지';
 if(FLASH==='regress'){setTimeout(()=>{start();toast('🌀 '+S.cycle+'회차 시작 — "내가 대학원생일 땐 말이야…"');},80);}
-if(FLASH==='regress')$('saveNote').textContent='🌀 '+S.cycle+'회차 — 조교수 · $1M · 양옆 맵 개방 · 학생 없음. "내가 대학원생일 땐 말이야…"'+(S.cycle>=4?' · Wet Lab에서 🛐 AI 교단 설립 가능':S.cycle>=3?' · 데이터센터에서 🤖 AI 소환·🦾 로봇 제작 가능':'');
+if(FLASH==='regress')$('saveNote').textContent='🌀 '+S.cycle+'회차 — 조교수 · '+fmt(S.cycle*1e6)+' · 양옆 맵 개방 · 학생 없음. "내가 대학원생일 땐 말이야…"'+(S.cycle>=4?' · Wet Lab에서 🛐 AI 교단 설립 가능':S.cycle>=3?' · 데이터센터에서 🤖 AI 소환·🦾 로봇 제작 가능':'');
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
 for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');for(let i=0;i<S.robots;i++)spawnWorker('robot');if(S.lv.admin>0)spawnAdmin();
 camera.position.set(0,21,19.5);camera.lookAt(0,0.5,1.5);
@@ -1231,6 +1242,7 @@ requestAnimationFrame(loop);
   <div class="hud" id="stam"><div class="bar"><div class="fill" id="stamFill"></div></div><div class="lab" id="stamLab">Stamina</div></div>
   <div id="toast"></div>
   <div id="fireTint"></div>
+  <div id="debtTint"><div class="debtMsg">🚨 Balance negative — raise funds within 15 seconds</div></div>
   <div id="partyPop"></div>
 
   <div id="start" class="overlay scroll">
@@ -1307,7 +1319,7 @@ requestAnimationFrame(loop);
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ Take a sabbatical (ends this run)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.6.4</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.7.1</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ Settings</b><br>
@@ -1333,7 +1345,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='Could not loa
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.6.4';const LANG='en';
+const VERSION='2.7.1';const LANG='en';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -1344,7 +1356,11 @@ const SAVE_KEY=()=>'lab_save_'+MODE;const EASY=()=>MODE==='easy';
 try{muted=localStorage.getItem('lab_mute_en')==='1';const j=JSON.parse(localStorage.getItem('lab_settings_en')||'null');if(j){SET.vol=clamp(+j.vol||1,0,1);SET.spd=clamp(+j.spd||1,1,2);if(typeof j.low==='boolean')SET.low=j.low;}}catch(e){}
 function saveSettings(){try{localStorage.setItem('lab_settings_en',JSON.stringify(SET));}catch(e){}}
 function audio(){if(AC)return AC;try{AC=new (window.AudioContext||window.webkitAudioContext)();MASTER=AC.createGain();MASTER.gain.value=muted?0:SET.vol;MASTER.connect(AC.destination);}catch(e){}return AC;}
-function beep(f,d,type,g){try{if(!audio())return;if(AC.state==='suspended')AC.resume();const o=AC.createOscillator(),v=AC.createGain();o.type=type||'square';o.frequency.value=f;v.gain.value=g||0.04;o.connect(v);v.connect(MASTER);o.start();v.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.08));o.stop(AC.currentTime+(d||0.08));}catch(e){}}
+function ensureAudio(){try{if(!AC)return;if(AC.state==='closed'){AC=null;MASTER=null;audio();if(BGM.timer)BGM.nextT=0;return;}if(AC.state!=='running'){const p=AC.resume();if(p&&p.then)p.then(()=>{if(BGM.timer)BGM.nextT=Math.max(BGM.nextT,AC.currentTime+0.05);}).catch(()=>{});}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')ensureAudio();});
+window.addEventListener('pageshow',ensureAudio);window.addEventListener('focus',ensureAudio);
+document.addEventListener('pointerdown',ensureAudio,{passive:true});document.addEventListener('touchend',ensureAudio,{passive:true});
+function beep(f,d,type,g){try{if(!audio())return;if(AC.state!=='running')ensureAudio();const o=AC.createOscillator(),v=AC.createGain();o.type=type||'square';o.frequency.value=f;v.gain.value=g||0.04;o.connect(v);v.connect(MASTER);o.start();v.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+(d||0.08));o.stop(AC.currentTime+(d||0.08));}catch(e){}}
 const midi=n=>440*Math.pow(2,(n-69)/12);
 const SONG={bpm:120,
   mel:[67,0,71,0,74,0,71,0, 69,0,72,0,76,0,72,0, 67,0,71,0,74,0,79,0, 78,0,76,0,74,0,71,0],
@@ -1352,15 +1368,15 @@ const SONG={bpm:120,
   arp:[55,59,62,59, 57,60,64,60, 55,59,62,59, 50,54,57,54, 55,59,62,59, 57,60,64,60, 55,59,62,59, 50,54,57,54]};
 const BGM={step:0,nextT:0,timer:null};
 function tone(n,t,dur,type,g){const o=AC.createOscillator(),v=AC.createGain();o.type=type;o.frequency.setValueAtTime(midi(n),t);v.gain.setValueAtTime(0.0001,t);v.gain.exponentialRampToValueAtTime(g,t+0.01);v.gain.exponentialRampToValueAtTime(0.0001,t+dur);o.connect(v);v.connect(MASTER);o.start(t);o.stop(t+dur+0.02);}
-function bgmTick(){if(!AC||!S.running)return;const sd=60/SONG.bpm/4;while(BGM.nextT<AC.currentTime+0.2){const i=BGM.step%32,t=BGM.nextT;if(SONG.mel[i])tone(SONG.mel[i],t,sd*1.7,'triangle',0.05);if(SONG.bass[i])tone(SONG.bass[i],t,sd*2.2,'sine',0.11);tone(SONG.arp[i],t,sd*0.8,'square',0.012);BGM.step++;BGM.nextT+=sd;}}
-function bgmStart(){if(!audio())return;if(AC.state==='suspended')AC.resume();BGM.nextT=AC.currentTime+0.05;if(!BGM.timer)BGM.timer=setInterval(bgmTick,50);}
+function bgmTick(){if(!AC||!S.running||AC.state!=='running')return;const sd=60/SONG.bpm/4;if(BGM.nextT<AC.currentTime-1)BGM.nextT=AC.currentTime+0.05;while(BGM.nextT<AC.currentTime+0.2){const i=BGM.step%32,t=BGM.nextT;if(SONG.mel[i])tone(SONG.mel[i],t,sd*1.7,'triangle',0.05);if(SONG.bass[i])tone(SONG.bass[i],t,sd*2.2,'sine',0.11);tone(SONG.arp[i],t,sd*0.8,'square',0.012);BGM.step++;BGM.nextT+=sd;}}
+function bgmStart(){if(!audio())return;ensureAudio();BGM.nextT=AC.currentTime+0.05;if(!BGM.timer)BGM.timer=setInterval(bgmTick,50);}
 function setMute(m){muted=m;try{localStorage.setItem('lab_mute_en',m?'1':'0');}catch(e){}if(MASTER)MASTER.gain.setTargetAtTime(m?0:SET.vol,AC.currentTime,0.05);$('mute').textContent=m?'🔇':'🔊';}
 
 /* ---------------- game state ---------------- */
 const UP={
   student:{name:'Hire Writer',icon:'🧑‍🎓',cost:l=>Math.round(6000*Math.pow(1.65,l)),get max(){return 8+(S.cycle-1)*2;},desc:l=>'Writers '+(1+l)+' → '+(2+l)+''},
   write:{name:'Writing Speed',icon:'⌨️',cost:l=>Math.round(9000*Math.pow(1.7,l)),max:6,desc:l=>'Lv '+l+' → '+(l+1)},
-  reviewer:{name:'Reviewer Professor',icon:'🧑‍🏫',cost:l=>Math.round(16000*Math.pow(1.9,l)),max:4,desc:l=>'Reviewers '+(1+l)+' → '+(2+l)+' · accept↑'},
+  reviewer:{name:'Reviewer Professor',icon:'🧑‍🏫',cost:l=>Math.round(16000*Math.pow(1.9,l)),get max(){return 4+(S.cycle-1)*2;},desc:l=>'Reviewers '+(1+l)+' → '+(2+l)+' · accept↑'},
   bag:{name:'Bag Capacity',icon:'🎒',cost:l=>Math.round(5000*Math.pow(1.6,l)),max:8,desc:l=>(10+3*l)+' → '+(13+3*l)},
   club:{name:'Club Upgrade',icon:'🏏',cost:l=>Math.round(7500*Math.pow(1.8,l)),max:6,desc:l=>'Damage '+(2+l)+' → '+(3+l)},
   ms:{name:'Hire MS Student',icon:'🧑‍🔬',cost:l=>Math.round(45000*Math.pow(1.6,l)),get max(){return 9+(S.cycle-1)*2;},unlock:10,desc:l=>'Labs 1–2 only · auto-collects data '+l+' → '+(l+1)+''},
@@ -1487,7 +1503,7 @@ addZone({kind:'coffee',x:11,z:7.5,r:1.4,color:0xff8a3d,y:2});
 addZone({kind:'labcoffee',x:14,z:9.6,r:1.4,color:0xff5a1f,y:2});
 addZone({kind:'ai',x:29,z:-24,r:1.6,color:0x00e5ff,y:2});addZone({kind:'cult',x:-24,z:-24.5,r:2.2,color:0x111111,y:2.4});addZone({kind:'robot',x:19,z:-24,r:1.6,color:0x39ff14,y:2});scene.add(box(1.2,1.2,0.8,0x442,14,0.6,11.4));
 const PADS={student:[-11,10.5],write:[-6.6,10.5],reviewer:[-2.2,10.5],bag:[2.2,10.5],club:[6.6,10.5],ms:[-14.2,5.2],phd:[-14.2,9.6],pd:[-14.2,-4.8],admin:[14,4.6],counsel:[4.4,7.2],admin2:[8,7.2],recruit:[-19,7.2]};
-Object.keys(PADS).forEach(k=>{const [x,z]=PADS[k];const hire=!!UP[k].unlock;addZone({kind:'up',key:k,x,z,r:1.35,color:hire?0x22c55e:0xb388ff,y:1.6});scene.add(box(hire?0.6:1.2,0.9,hire?1.2:0.6,hire?0x2a7a4a:0x6b5aa8,hire?x-1.4:x,0.45,hire?z:z+1.7));});
+Object.keys(PADS).forEach(k=>{const [x,z]=PADS[k];const hire=!!UP[k].unlock;const z0=addZone({kind:'up',key:k,x,z,r:1.35,color:hire?0x22c55e:0xb388ff,y:1.6});z0.kiosk=box(hire?0.6:1.2,0.9,hire?1.2:0.6,hire?0x2a7a4a:0x6b5aa8,hire?x-1.4:x,0.45,hire?z:z+1.7);scene.add(z0.kiosk);});
 // wings
 const TYPES={
   micro:{name:'Microscope',hp:5,drop:4,repair:25,build:g=>{g.add(box(1.3,0.25,1.0,0x7a8aa0,0,0.12,0));g.add(cyl(0.12,0.12,1.0,0x555,0.25,0.75,0));g.add(box(0.3,0.5,0.3,0x3fb0c8,0.25,1.4,0));g.add(box(0.5,0.1,0.5,0xddd,-0.2,0.5,0));}},
@@ -1937,8 +1953,9 @@ function update(dt){
       if(inside&&S.labCd<=0&&S.money>=cost){spend(cost);S.labCoffee=20;S.labCd=60;S.stamina=100;beep(1300,0.12,'sine',0.05);pop(p.x,2.2,p.z,'☕☕ Whole lab wired!','#ff5a1f');toast('☕☆ Coffee for everyone — 20s boost');}
     }else if(z.kind==='up'){
       const k=z.key,lv=S.lv[k];
-      if(UP[k].cycle&&S.cycle<UP[k].cycle){html='🌀 Cycle '+UP[k].name+'<small>'+UP[k].cycle+'Available from cycle </small>';cls='no';}
-      else if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'Assistant Professor':'Postdoc')+' rank ('+UP[k].unlock+' papers) · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
+      if(UP[k].cycle&&S.cycle<UP[k].cycle){z.el.style.display='none';z.ring.visible=false;if(z.kiosk)z.kiosk.visible=false;continue;}
+      z.ring.visible=true;if(z.kiosk)z.kiosk.visible=true;
+      if(UP[k].unlock&&S.accepted<UP[k].unlock){html='🔒 '+UP[k].name+'<small>'+(UP[k].unlock>=20?'Assistant Professor':'Postdoc')+' rank ('+UP[k].unlock+' papers) · '+S.accepted+'/'+UP[k].unlock+'</small>';cls='no';}
       else if(lv>=UP[k].max){html=UP[k].icon+' '+UP[k].name+'<small>MAX</small>';cls='no';}
       else{const cost=UP[k].cost(lv);html=UP[k].icon+' '+UP[k].name+' '+fmt(cost)+'<small>'+UP[k].desc(lv)+'</small><div class="pb"><i style="width:'+Math.round(z.paid/cost*100)+'%"></i></div>';cls=inside&&S.money>0?'ok':'no';
         if(inside&&S.money>0){const chunk=Math.min(S.money,Math.max(1,cost*dt*1.6),cost-z.paid);S.money-=chunk;z.paid+=chunk;if(z.paid>=cost-0.01){z.paid=0;doUpgrade(z);}}
@@ -2017,7 +2034,7 @@ function update(dt){
 
   // semester / teaching
   S.semT-=dt;
-  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 Semester over · teaching pay +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0&&!EASY()){gameOver('bankrupt');return;}if(S.money<0){S.money=0;toast('💸 Payroll '+fmt(pay)+' paid — balance negative! Bankrupt if not repaid by next semester');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 End-of-term payroll '+fmt(pay)+' paid');if(S.debtT)S.debtT=0;}
+  if(S.semT<=0){S.semT=120;S.sem++;if(S.teach){const m=Math.round((20000+S.accepted*600)*(1+0.25*S.sabb));S.money+=m;toast('📚 Semester over · teaching pay +'+fmt(m));beep(900,0.2,'triangle',0.05);}S.teach=false;const pay=Math.round(payroll()*(EASY()?0.5:1));S.money-=pay;if(S.money<0&&!EASY()){S.debtGrace=15;$('debtTint').classList.add('on');beep(120,0.8,'sawtooth',0.08);toast('🚨 Balance negative! Bankrupt in 15s unless you raise funds');}if(S.money<0&&EASY()){S.money=0;toast('💸 Payroll '+fmt(pay)+' paid — balance negative! Bankrupt if not repaid by next semester');S.debtT=1;beep(150,0.5,'sawtooth',0.06);}else{toast('💸 End-of-term payroll '+fmt(pay)+' paid');if(S.debtT)S.debtT=0;}
   if(S.money<0&&S.debtT>=2&&!EASY()){gameOver('bankrupt');}else if(S.money<0)S.debtT=(S.debtT||0)+1;
   if(S.accepted>=20){S.call={t:50};toast('📜 Grant call open — apply in 🏛 within 50s');beep(1100,0.15,'square',0.05);}save();}
   if(S.call){S.call.t-=dt;if(S.call.t<=0){S.call=null;toast('📜 Grant call closed');}}
@@ -2031,6 +2048,7 @@ function update(dt){
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 Fire! Everyone grab an extinguisher'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};beep(80,0.8,'sawtooth',0.07);}}
   updateAI(dt);updateCult(dt);updateFire(dt);updateBlackout(dt);
+  if(S.debtGrace>0){if(S.money>=0){S.debtGrace=0;$('debtTint').classList.remove('on');toast('✅ Balance restored — bankruptcy averted');if(!S.event)$('banner').classList.remove('on');}else{S.debtGrace-=dt;$('banner').textContent='🚨 Bankruptcy warning '+Math.ceil(S.debtGrace)+'s — balance '+fmt(S.money)+' · submit papers, tribute or grants';$('banner').classList.add('on');if(S.debtGrace<=0){$('debtTint').classList.remove('on');gameOver('bankrupt');return;}}}
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ Vacation over — back to work');}
   if(S.semT<20&&S.semT+dt>=20&&S.money<payroll())toast('⚠️ Payroll in 20s: '+fmt(payroll())+' — balance too low!');
   if(S.semCd>0)S.semCd-=dt;if(S.labCd>0)S.labCd-=dt;if(S.labCoffee>0)S.labCoffee-=dt;if(S.bonusCd>0)S.bonusCd-=dt;
@@ -2162,7 +2180,7 @@ function gameOver(kind){
   const lab=S.labName||'Our Lab';
   $('goTitle').textContent=kind==='bankrupt'?'💸 Bankrupt — lab closed':kind==='overwork'?'😵 Overwork — lab dissolved':kind==='exodus'?'🏃 All students fled — advising rights revoked':'🏁 Lab closed';
   $('goBody').innerHTML=(kind==='exodus'?'<p>'+lab+' has no writers left.<br>The club-wielding professor was disciplined by the department.</p><p class="sub">Hitting students builds grudge and raises the chance they flee. Lab dinners calm them.</p>':kind==='quit'?'<p>'+lab+' closes its doors here.<br>Your record is in the Hall of Fame.</p>':kind==='bankrupt'
-    ?'<p>'+lab+' could not pay end-of-term payroll and went into the red.<br>The students left for other labs and the equipment was seized.</p><p class="sub">Payroll is due every semester. Check the next payroll in 🏛.</p>'
+    ?'<p>'+lab+' could not pay payroll and failed to raise funds within 15 seconds.<br>The students left for other labs and the equipment was seized.</p><p class="sub">Payroll is due every semester. Check the next payroll in 🏛.</p>'
     :'<p>'+lab+' lost four researchers to overwork.<br>Two labor board reports changed nothing, so the lab was dissolved.</p><p class="sub">Fatigue is shown in 🏛 and lowered with lab dinners and vacations.</p>')+
     '<p class="sub">Papers '+S.accepted+' · Alumni '+S.alumni+' · total funding '+fmt(S.earned)+'</p>';
   $('goBox').classList.remove('hidden');
@@ -2224,7 +2242,7 @@ function showFinal(){
   const lab=S.labName||'Our Lab';
   $('finalHead').textContent='🌌 This cycle: '+fmt(S.earned>=1e8*S.cycle?Math.floor(S.earned/1e8)*1e8:1e8*S.cycle)+' reached';
   $('btnFinalSabb').textContent=S.cycle>=4?'🏝️ Retire (ends this run)':'🏝️ Take a sabbatical (ends this run)';$('btnFinalContinue').style.display=S.cycle>=4?'':'none';
-  $('regressNote').textContent=S.cycle>=4?'From cycle 4 this screen returns every extra $500M · the true ending is 1,000 papers = a 10-tier pyramid':'Regress to cycle '+(S.cycle+1)+': Assistant Professor · $1M · side maps open · all students gone'+(S.cycle+1===2?' · counselor & admin 2 hireable':S.cycle+1===3?' · summon AI and build robots in the Data Center':' · found the AI cult in the Wet Lab → 1,000 papers = 10-tier pyramid is the true ending · next milestone '+fmt(1e8*(S.cycle+1)));$('btnRegress').style.display=S.cycle>=4?'none':'';
+  $('regressNote').textContent=S.cycle>=4?'From cycle 4 this screen returns every extra $500M · the true ending is 1,000 papers = a 10-tier pyramid':'Regress to cycle '+(S.cycle+1)+': Assistant Professor · '+fmt((S.cycle+1)*1e6)+' · side maps open · all students gone'+(S.cycle+1===2?' · counselor & admin 2 hireable':S.cycle+1===3?' · summon AI and build robots in the Data Center':' · found the AI cult in the Wet Lab → 1,000 papers = 10-tier pyramid is the true ending · next milestone '+fmt(1e8*(S.cycle+1)));$('btnRegress').style.display=S.cycle>=4?'none':'';
   $('finalBody').innerHTML=
     '<p class="big" style="font-size:2rem">You are a god of research</p>'+
     '<p>'+lab+' earned this cycle<br>'+fmt(Math.max(1e8*S.cycle,Math.floor(S.earned/1e8)*1e8))+'.<br>Papers '+S.accepted+' · Alumni '+S.alumni+' · Rejects '+S.rejected+'.</p>'+
@@ -2260,7 +2278,7 @@ $('btnEndContinue').addEventListener('click',()=>{$('endBox').classList.add('hid
 function doRegress(){
   recordRun('Cycle '+(S.cycle+1)+'');NOSAVE=true;try{localStorage.setItem('lab_flash','regress');}catch(e){}$('finalBox').classList.add('hidden');
   const c=S.cycle+1;
-  try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:1000000,lv:{student:-1,write:2,reviewer:1,bag:2,club:2,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},ai:0,robots:0,cult:0,pyr:0,accepted:20,rejected:0,wings:[true,true,true,true,true],pile:0,queue:0,sem:1,grantBonus:0.15,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:true,labName:S.labName,natures:0,cycle:c,won:[true,true,false,false],playT:S.playT,profT:S.profT}));}catch(e){}
+  try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:c*1000000,lv:{student:-1,write:2,reviewer:1,bag:2,club:2,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},ai:0,robots:0,cult:0,pyr:0,accepted:20,rejected:0,wings:[true,true,true,true,true],pile:0,queue:0,sem:1,grantBonus:0.15,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb,ended:false,deptIntro:true,labName:S.labName,natures:0,cycle:c,won:[true,true,false,false],playT:S.playT,profT:S.profT}));}catch(e){}
   restartGame();
 }
 function doSabbatical(){recordRun('Sabbatical');NOSAVE=true;try{localStorage.setItem('lab_flash','sabb');}catch(e){}$('finalBox').classList.add('hidden');$('endBox').classList.add('hidden');$('goBox').classList.add('hidden');try{localStorage.setItem(SAVE_KEY(),JSON.stringify({money:0,lv:{student:0,write:0,reviewer:0,bag:0,club:0,ms:0,phd:0,pd:0,admin:0,counsel:0,admin2:0,recruit:0},accepted:0,rejected:0,wings:[true,false,false,false,false],pile:0,queue:0,sem:1,grantBonus:0,ver:200,leader:false,alumni:S.alumni,sabb:S.sabb+1,ended:false}));}catch(e){}restartGame();}
@@ -2326,7 +2344,7 @@ $('verNote').textContent='v'+VERSION;logVisit();let FLASH='';try{FLASH=localStor
 if(load()){$('labName').value=S.labName||'';$('saveNote').textContent=(EASY()?'[Easy] ':'[Hell] ')+'Saved progress loaded — Papers '+S.accepted+' · '+fmt(S.money);}
 if(FLASH==='sabb')$('saveNote').textContent='🏝️ Back from sabbatical — new lab · alumni bonus kept';
 if(FLASH==='regress'){setTimeout(()=>{start();toast('🌀 Cycle '+S.cycle+' begins — "Back when I was a grad student…"');},80);}
-if(FLASH==='regress')$('saveNote').textContent='🌀 Cycle '+S.cycle+' — Assistant Professor · $1M · side maps open · no students. "Back when I was a grad student…"'+(S.cycle>=4?' · found the 🛐 AI cult in the Wet Lab':S.cycle>=3?' · summon 🤖 AI and build 🦾 robots in the Data Center':'');
+if(FLASH==='regress')$('saveNote').textContent='🌀 Cycle '+S.cycle+' — Assistant Professor · '+fmt(S.cycle*1e6)+' · side maps open · no students. "Back when I was a grad student…"'+(S.cycle>=4?' · found the 🛐 AI cult in the Wet Lab':S.cycle>=3?' · summon 🤖 AI and build 🦾 robots in the Data Center':'');
 resize();layoutStudents();layoutProfs();applyWings();refreshPiles();refreshStack();setMute(muted);
 for(let i=0;i<S.lv.ms;i++)spawnWorker('ms');for(let i=0;i<S.lv.phd;i++)spawnWorker('phd');for(let i=0;i<S.lv.pd;i++)spawnWorker('pd');for(let i=0;i<S.robots;i++)spawnWorker('robot');if(S.lv.admin>0)spawnAdmin();
 camera.position.set(0,21,19.5);camera.lookAt(0,0.5,1.5);
