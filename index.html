@@ -194,7 +194,7 @@ canvas{display:block;width:100%;height:100%}
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ 안식년 떠나기 (종료)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.7.1</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.7.2</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ 설정</b><br>
@@ -220,7 +220,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='3D 엔진을 
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.7.1';const LANG='ko';
+const VERSION='2.7.2';const LANG='ko';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -275,7 +275,7 @@ const effWrite=()=>(S.labCoffee>0?0.6:1)*(S.bonusT>0?0.5:S.slumpT>0?1.4:1);
 const effSpeed=()=>(S.labCoffee>0?1.4:1)*(S.bonusT>0?1.5:S.slumpT>0?0.8:1);
 const dropMult=()=>S.buff&&S.buff.k==='data'?1.5:1;
 const speedMult=()=>(S.buff&&S.buff.k==='speed'?1.3:1)*(S.teach?0.85:1)*(S.flood>0?0.45:1);
-const paperValue=()=>Math.round((6000+S.accepted*150)*(S.event&&S.event.k==='conf'?2:S.event&&S.event.k==='cut'?0.7:S.event&&S.event.k==='raise'?1.3:1)*(1+S.grantBonus)*(1+0.02*S.alumni)*(1+0.25*S.sabb));
+const paperValue=()=>Math.round((S.cycle>=3?0.75:1)*(6000+S.accepted*150)*(S.event&&S.event.k==='conf'?2:S.event&&S.event.k==='cut'?0.7:S.event&&S.event.k==='raise'?1.3:1)*(1+S.grantBonus)*(1+0.02*S.alumni)*(1+0.25*S.sabb));
 function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t=n;return t;}
 let lastSaved=null;
 let NOSAVE=false;
@@ -463,8 +463,8 @@ function updateWorkers(dt){
     if(w.fat>=100){S.quitCd=20;scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'석사생':w.kind==='phd'?'박사생':'포닥');save();continue;}
     if(w.fat>=70){if(UI){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' 피로 '+Math.round(w.fat)+'%';}projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
     if(w.kind==='ms'||w.kind==='pd'||w.kind==='robot'){
-      if(w.kind==='ms'&&S.cult){const a=S.t*0.6+w.ph;const tx=PYR.x+Math.cos(a)*7.5,tz=PYR.z+Math.sin(a)*7.5;moveTo(w,tx,tz,dt,3);w.ch.la.rotation.x=-2.4;w.ch.ra.rotation.x=-2.4;w.el.style.display='none';continue;}
-      if(w.kind==='ms'&&S.robots>=3){w.g.rotation.y+=dt*3;p.y=Math.abs(Math.sin(S.t*5+w.ph))*0.2;w.ch.la.rotation.x=-2.5;w.ch.ra.rotation.x=-2.5;w.el.style.display='none';if(w.carry>0){w.state='toDeposit';}else continue;}
+      if(w.kind!=='robot'&&S.cult){const rad=w.kind==='ms'?7.5:w.kind==='phd'?8.6:9.7;const a=S.t*(w.kind==='ms'?0.6:w.kind==='phd'?-0.5:0.45)+w.ph;const tx=PYR.x+Math.cos(a)*rad,tz=PYR.z+Math.sin(a)*rad;moveTo(w,tx,tz,dt,3);w.ch.la.rotation.x=-2.4;w.ch.ra.rotation.x=-2.4;w.el.style.display='none';continue;}
+      if(w.kind==='ms'&&(S.ai>0||S.robots>=3)){w.g.rotation.y+=dt*3;p.y=Math.abs(Math.sin(S.t*5+w.ph))*0.2;w.ch.la.rotation.x=-2.5;w.ch.ra.rotation.x=-2.5;w.el.style.display='none';if(w.carry>0){w.state='toDeposit';}else continue;}
       if(w.state==='seek'){
         let best=null,bd=1e9;const topWing=S.wings.lastIndexOf(true);for(const ins of instruments){if(ins.broken||!S.wings[ins.wing])continue;if(w.kind==='ms'&&ins.wing>1)continue;const d=(ins.x-p.x)**2+(ins.z-p.z)**2+(w.kind==='pd'||w.kind==='robot'?(topWing-ins.wing)*400:0);if(d<bd){bd=d;best=ins;}}
         if(best){w.target=best;w.state='go';}else{w.wait-=dt;if(w.wait<=0){w.wait=2;w.target=null;}moveTo(w,-3+Math.sin(w.ph)*1.5,5,dt,2.2);}
@@ -485,6 +485,7 @@ function updateWorkers(dt){
           if(w.carry<=0){w.state='seek';}}
       }
     }else{ // phd
+      if(S.cult){continue;}
       if(w.state==='toPickup'){
         if(moveTo(w,-10.5,3.6,dt,3.8)){w.t+=dt;if(w.t>=0.12&&S.pile>0&&w.carry<w.cap){w.t=0;S.pile--;refreshPiles();w.carry++;refreshWorkerStack(w);}
           if(w.carry>=w.cap||(w.carry>0&&S.pile<=0)){w.state='toDeliver';}}
@@ -498,7 +499,7 @@ function updateWorkers(dt){
 
 /* ---------------- cult & pyramid (cycle 4) ---------------- */
 const PYR_COST=100000;
-const cultists=()=>students()+S.lv.ms;
+const cultists=()=>students()+S.lv.ms+S.lv.phd+S.lv.pd+reviewers()+S.lv.admin+S.lv.counsel+S.lv.admin2+S.lv.recruit;
 const cultIncome=()=>Math.round(paperValue()*0.35*cultists());
 const PYR={x:-24,z:-32};
 const goldFloor=new THREE.Mesh(new THREE.PlaneGeometry(14,13),new THREE.MeshPhongMaterial({color:0xffd23d,emissive:0x5a4200,shininess:90}));goldFloor.rotation.x=-Math.PI/2;goldFloor.position.set(PYR.x,0.06,PYR.z+1);goldFloor.visible=false;scene.add(goldFloor);
@@ -866,7 +867,7 @@ function update(dt){
   timers.review.length=reviewers();
   for(let i=0;i<timers.review.length;i++){
     const pcS=profChars[i%profChars.length];if(pcS&&pcS.stun>0){pcS.stun-=dt;continue;}
-    if(S.rev<=0||S.blackout>0)continue;
+    if(S.rev<=0||S.blackout>0||S.cult)continue;
     timers.review[i]-=dt;
     if(timers.review[i]<=0){
       timers.review[i]=7*(S.labCoffee>0?0.6:1);S.rev--;
@@ -887,7 +888,7 @@ function update(dt){
       }
     }
   }
-  profChars.forEach((c,i)=>{const busy=S.rev>0;if(c.stun>0){c.head.rotation.z=Math.sin(S.t*20)*0.5;c.g.rotation.x=0.25;return;}c.g.rotation.x=0;c.head.rotation.z=busy?Math.sin(S.t*6+i)*0.12:0;c.ra.rotation.x=busy?-0.9+Math.sin(S.t*12+i)*0.3:0;});
+  profChars.forEach((c,i)=>{if(S.cult){const a=-S.t*0.4+i*1.3;const tx=PYR.x+Math.cos(a)*10.8,tz=PYR.z+Math.sin(a)*10.8;const q=c.g.position;const dx=tx-q.x,dz=tz-q.z,dd=Math.hypot(dx,dz);const st=Math.min(dd,3.5*dt);if(dd>0.05){q.x+=dx/dd*st;q.z+=dz/dd*st;}c.g.rotation.y=Math.atan2(dx,dz);c.g.rotation.x=0;c.la.rotation.x=-2.3;c.ra.rotation.x=-2.3;return;}if(!c.home)c.home={x:c.g.position.x,z:c.g.position.z};c.g.position.x=c.home.x;c.g.position.z=c.home.z;const busy=S.rev>0;if(c.stun>0){c.head.rotation.z=Math.sin(S.t*20)*0.5;c.g.rotation.x=0.25;return;}c.g.rotation.x=0;c.head.rotation.z=busy?Math.sin(S.t*6+i)*0.12:0;c.ra.rotation.x=busy?-0.9+Math.sin(S.t*12+i)*0.3:0;});
 
   // events
   if(S.event){S.event.t-=dt;if(S.event.t<=0){S.event=null;$('banner').classList.remove('on');}else $('banner').textContent=S.event.msg+' '+Math.ceil(S.event.t)+'초';}
@@ -922,6 +923,7 @@ function update(dt){
   updateFlood(dt);
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 화재 발생! 모두 소화기를 들어라'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ 정전! 손전등 시야만 남았다'};beep(80,0.8,'sawtooth',0.07);}}
+  if(adminChar){if(S.cult){const a=S.t*0.35+2;const tx=PYR.x+Math.cos(a)*11.5,tz=PYR.z+Math.sin(a)*11.5;const q=adminChar.g.position;const dx=tx-q.x,dz=tz-q.z,dd=Math.hypot(dx,dz);const st=Math.min(dd,3.5*dt);if(dd>0.05){q.x+=dx/dd*st;q.z+=dz/dd*st;}adminChar.g.rotation.y=Math.atan2(dx,dz);adminChar.la.rotation.x=-2.3;adminChar.ra.rotation.x=-2.3;}else{adminChar.g.position.set(14.6,0,2.6);adminChar.g.rotation.y=-Math.PI/2;adminChar.la.rotation.x=0;adminChar.ra.rotation.x=0;}}
   updateAI(dt);updateCult(dt);updateFire(dt);updateBlackout(dt);
   if(S.debtGrace>0){if(S.money>=0){S.debtGrace=0;$('debtTint').classList.remove('on');toast('✅ 잔고 회복 — 파산 위기 해제');if(!S.event)$('banner').classList.remove('on');}else{S.debtGrace-=dt;$('banner').textContent='🚨 파산 경고 '+Math.ceil(S.debtGrace)+'초 — 잔고 '+fmt(S.money)+' · 논문 제출·헌금·과제로 채우세요';$('banner').classList.add('on');if(S.debtGrace<=0){$('debtTint').classList.remove('on');gameOver('bankrupt');return;}}}
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ 휴가 끝 — 다시 출근');}
@@ -1319,7 +1321,7 @@ requestAnimationFrame(loop);
     <button class="btn" id="btnSabb" style="background:#4fb3ff;box-shadow:0 6px 0 #2a7ab8;color:#fff">🏝️ Take a sabbatical (ends this run)</button>
   </div>
   <div id="menuBox" class="overlay hidden" style="justify-content:flex-start;overflow-y:auto;padding-top:calc(24px + env(safe-area-inset-top,0px))">
-    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.7.1</small></h1>
+    <h1>☰ <small style="font-size:.9rem;opacity:.7">v2.7.2</small></h1>
     <p id="menuStats"></p>
     <div class="dept">
       <div class="sec"><b>⚙️ Settings</b><br>
@@ -1345,7 +1347,7 @@ if(!window.THREE){document.getElementById('saveNote').textContent='Could not loa
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>a+Math.random()*(b-a),ri=(a,b)=>Math.floor(rnd(a,b+1)),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const TAU=Math.PI*2;
-const VERSION='2.7.1';const LANG='en';
+const VERSION='2.7.2';const LANG='en';
 const fmt=v=>{v=Math.floor(v);const a=Math.abs(v);if(a>=1e6)return '$'+(v/1e6).toFixed(2).replace(/\.?0+$/,'')+'M';if(a>=1e4)return '$'+(v/1e3).toFixed(1).replace(/\.0$/,'')+'k';return '$'+v.toLocaleString();};
 
 /* ---------------- audio ---------------- */
@@ -1400,7 +1402,7 @@ const effWrite=()=>(S.labCoffee>0?0.6:1)*(S.bonusT>0?0.5:S.slumpT>0?1.4:1);
 const effSpeed=()=>(S.labCoffee>0?1.4:1)*(S.bonusT>0?1.5:S.slumpT>0?0.8:1);
 const dropMult=()=>S.buff&&S.buff.k==='data'?1.5:1;
 const speedMult=()=>(S.buff&&S.buff.k==='speed'?1.3:1)*(S.teach?0.85:1)*(S.flood>0?0.45:1);
-const paperValue=()=>Math.round((6000+S.accepted*150)*(S.event&&S.event.k==='conf'?2:S.event&&S.event.k==='cut'?0.7:S.event&&S.event.k==='raise'?1.3:1)*(1+S.grantBonus)*(1+0.02*S.alumni)*(1+0.25*S.sabb));
+const paperValue=()=>Math.round((S.cycle>=3?0.75:1)*(6000+S.accepted*150)*(S.event&&S.event.k==='conf'?2:S.event&&S.event.k==='cut'?0.7:S.event&&S.event.k==='raise'?1.3:1)*(1+S.grantBonus)*(1+0.02*S.alumni)*(1+0.25*S.sabb));
 function title(){let t=TITLES[0][1];for(const [h,n] of TITLES)if(S.accepted>=h)t=n;return t;}
 let lastSaved=null;
 let NOSAVE=false;
@@ -1588,8 +1590,8 @@ function updateWorkers(dt){
     if(w.fat>=100){S.quitCd=20;scene.remove(w.g);w.el.remove();workers.splice(workers.indexOf(w),1);S.lv[w.kind]=Math.max(0,S.lv[w.kind]-1);overworkQuit(w.kind==='ms'?'MS student':w.kind==='phd'?'PhD student':'Postdoc');save();continue;}
     if(w.fat>=70){if(UI){w.el.style.display='block';w.el.className='lab3d '+(w.fat>=90?'no':'ok');w.el.innerHTML=(w.fat>=90?'😵':'😫')+' fatigue '+Math.round(w.fat)+'%';}projectLabel(w.el,p.x,2.3,p.z);}else w.el.style.display='none';
     if(w.kind==='ms'||w.kind==='pd'||w.kind==='robot'){
-      if(w.kind==='ms'&&S.cult){const a=S.t*0.6+w.ph;const tx=PYR.x+Math.cos(a)*7.5,tz=PYR.z+Math.sin(a)*7.5;moveTo(w,tx,tz,dt,3);w.ch.la.rotation.x=-2.4;w.ch.ra.rotation.x=-2.4;w.el.style.display='none';continue;}
-      if(w.kind==='ms'&&S.robots>=3){w.g.rotation.y+=dt*3;p.y=Math.abs(Math.sin(S.t*5+w.ph))*0.2;w.ch.la.rotation.x=-2.5;w.ch.ra.rotation.x=-2.5;w.el.style.display='none';if(w.carry>0){w.state='toDeposit';}else continue;}
+      if(w.kind!=='robot'&&S.cult){const rad=w.kind==='ms'?7.5:w.kind==='phd'?8.6:9.7;const a=S.t*(w.kind==='ms'?0.6:w.kind==='phd'?-0.5:0.45)+w.ph;const tx=PYR.x+Math.cos(a)*rad,tz=PYR.z+Math.sin(a)*rad;moveTo(w,tx,tz,dt,3);w.ch.la.rotation.x=-2.4;w.ch.ra.rotation.x=-2.4;w.el.style.display='none';continue;}
+      if(w.kind==='ms'&&(S.ai>0||S.robots>=3)){w.g.rotation.y+=dt*3;p.y=Math.abs(Math.sin(S.t*5+w.ph))*0.2;w.ch.la.rotation.x=-2.5;w.ch.ra.rotation.x=-2.5;w.el.style.display='none';if(w.carry>0){w.state='toDeposit';}else continue;}
       if(w.state==='seek'){
         let best=null,bd=1e9;const topWing=S.wings.lastIndexOf(true);for(const ins of instruments){if(ins.broken||!S.wings[ins.wing])continue;if(w.kind==='ms'&&ins.wing>1)continue;const d=(ins.x-p.x)**2+(ins.z-p.z)**2+(w.kind==='pd'||w.kind==='robot'?(topWing-ins.wing)*400:0);if(d<bd){bd=d;best=ins;}}
         if(best){w.target=best;w.state='go';}else{w.wait-=dt;if(w.wait<=0){w.wait=2;w.target=null;}moveTo(w,-3+Math.sin(w.ph)*1.5,5,dt,2.2);}
@@ -1610,6 +1612,7 @@ function updateWorkers(dt){
           if(w.carry<=0){w.state='seek';}}
       }
     }else{ // phd
+      if(S.cult){continue;}
       if(w.state==='toPickup'){
         if(moveTo(w,-10.5,3.6,dt,3.8)){w.t+=dt;if(w.t>=0.12&&S.pile>0&&w.carry<w.cap){w.t=0;S.pile--;refreshPiles();w.carry++;refreshWorkerStack(w);}
           if(w.carry>=w.cap||(w.carry>0&&S.pile<=0)){w.state='toDeliver';}}
@@ -1623,7 +1626,7 @@ function updateWorkers(dt){
 
 /* ---------------- cult & pyramid (cycle 4) ---------------- */
 const PYR_COST=100000;
-const cultists=()=>students()+S.lv.ms;
+const cultists=()=>students()+S.lv.ms+S.lv.phd+S.lv.pd+reviewers()+S.lv.admin+S.lv.counsel+S.lv.admin2+S.lv.recruit;
 const cultIncome=()=>Math.round(paperValue()*0.35*cultists());
 const PYR={x:-24,z:-32};
 const goldFloor=new THREE.Mesh(new THREE.PlaneGeometry(14,13),new THREE.MeshPhongMaterial({color:0xffd23d,emissive:0x5a4200,shininess:90}));goldFloor.rotation.x=-Math.PI/2;goldFloor.position.set(PYR.x,0.06,PYR.z+1);goldFloor.visible=false;scene.add(goldFloor);
@@ -1991,7 +1994,7 @@ function update(dt){
   timers.review.length=reviewers();
   for(let i=0;i<timers.review.length;i++){
     const pcS=profChars[i%profChars.length];if(pcS&&pcS.stun>0){pcS.stun-=dt;continue;}
-    if(S.rev<=0||S.blackout>0)continue;
+    if(S.rev<=0||S.blackout>0||S.cult)continue;
     timers.review[i]-=dt;
     if(timers.review[i]<=0){
       timers.review[i]=7*(S.labCoffee>0?0.6:1);S.rev--;
@@ -2012,7 +2015,7 @@ function update(dt){
       }
     }
   }
-  profChars.forEach((c,i)=>{const busy=S.rev>0;if(c.stun>0){c.head.rotation.z=Math.sin(S.t*20)*0.5;c.g.rotation.x=0.25;return;}c.g.rotation.x=0;c.head.rotation.z=busy?Math.sin(S.t*6+i)*0.12:0;c.ra.rotation.x=busy?-0.9+Math.sin(S.t*12+i)*0.3:0;});
+  profChars.forEach((c,i)=>{if(S.cult){const a=-S.t*0.4+i*1.3;const tx=PYR.x+Math.cos(a)*10.8,tz=PYR.z+Math.sin(a)*10.8;const q=c.g.position;const dx=tx-q.x,dz=tz-q.z,dd=Math.hypot(dx,dz);const st=Math.min(dd,3.5*dt);if(dd>0.05){q.x+=dx/dd*st;q.z+=dz/dd*st;}c.g.rotation.y=Math.atan2(dx,dz);c.g.rotation.x=0;c.la.rotation.x=-2.3;c.ra.rotation.x=-2.3;return;}if(!c.home)c.home={x:c.g.position.x,z:c.g.position.z};c.g.position.x=c.home.x;c.g.position.z=c.home.z;const busy=S.rev>0;if(c.stun>0){c.head.rotation.z=Math.sin(S.t*20)*0.5;c.g.rotation.x=0.25;return;}c.g.rotation.x=0;c.head.rotation.z=busy?Math.sin(S.t*6+i)*0.12:0;c.ra.rotation.x=busy?-0.9+Math.sin(S.t*12+i)*0.3:0;});
 
   // events
   if(S.event){S.event.t-=dt;if(S.event.t<=0){S.event=null;$('banner').classList.remove('on');}else $('banner').textContent=S.event.msg+' '+Math.ceil(S.event.t)+'s';}
@@ -2047,6 +2050,7 @@ function update(dt){
   updateFlood(dt);
   if(S.fireT<=0){if(S.blackout>0||S.party>0)S.fireT=15;else{S.fireT=rnd(200,280);startFire();if(S.fire){S.event={k:'fire',t:6,msg:'🔥 Fire! Everyone grab an extinguisher'};$('banner').textContent=S.event.msg;$('banner').classList.add('on');}}}
   if(S.darkT<=0){if(S.fire||S.party>0)S.darkT=15;else{S.darkT=rnd(290,380);S.blackout=15;S.event={k:'dark',t:15,msg:'⚡ Blackout! Only your flashlight works'};beep(80,0.8,'sawtooth',0.07);}}
+  if(adminChar){if(S.cult){const a=S.t*0.35+2;const tx=PYR.x+Math.cos(a)*11.5,tz=PYR.z+Math.sin(a)*11.5;const q=adminChar.g.position;const dx=tx-q.x,dz=tz-q.z,dd=Math.hypot(dx,dz);const st=Math.min(dd,3.5*dt);if(dd>0.05){q.x+=dx/dd*st;q.z+=dz/dd*st;}adminChar.g.rotation.y=Math.atan2(dx,dz);adminChar.la.rotation.x=-2.3;adminChar.ra.rotation.x=-2.3;}else{adminChar.g.position.set(14.6,0,2.6);adminChar.g.rotation.y=-Math.PI/2;adminChar.la.rotation.x=0;adminChar.ra.rotation.x=0;}}
   updateAI(dt);updateCult(dt);updateFire(dt);updateBlackout(dt);
   if(S.debtGrace>0){if(S.money>=0){S.debtGrace=0;$('debtTint').classList.remove('on');toast('✅ Balance restored — bankruptcy averted');if(!S.event)$('banner').classList.remove('on');}else{S.debtGrace-=dt;$('banner').textContent='🚨 Bankruptcy warning '+Math.ceil(S.debtGrace)+'s — balance '+fmt(S.money)+' · submit papers, tribute or grants';$('banner').classList.add('on');if(S.debtGrace<=0){$('debtTint').classList.remove('on');gameOver('bankrupt');return;}}}
   if(S.dinnerCd>0)S.dinnerCd-=dt;if(S.vacCd>0)S.vacCd-=dt;if(S.vacT>0){S.vacT-=dt;if(S.vacT<=0)toast('🏖️ Vacation over — back to work');}
